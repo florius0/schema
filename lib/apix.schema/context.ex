@@ -43,10 +43,13 @@ defmodule Apix.Schema.Context do
   def expression!(context, elixir_ast, schema_ast \\ nil, env) do
     schema_ast = schema_ast || context.ast || %Ast{}
 
-    prewalker = fn elixir_ast_node, schema_ast ->
+    prewalker = fn elixir_ast, schema_ast ->
       context.extensions
-      |> Enum.find_value(&Extension.expression!(&1, context, elixir_ast_node, schema_ast, env, Macro.quoted_literal?(elixir_ast_node)))
-      |> Ast.maybe_put_meta(env, elixir_ast_node)
+      |> Enum.find_value(fn extension ->
+        extension
+        |> Extension.expression!(context, elixir_ast, schema_ast, env, Macro.quoted_literal?(elixir_ast))
+        |> Ast.Meta.maybe_put_in(env: env, elixir_ast: elixir_ast, generated_by: extension)
+      end)
       |> case do
         %Ast{} = schema_ast -> {schema_ast, schema_ast}
         %Ast.Parameter{} = schema_ast -> {schema_ast, schema_ast}

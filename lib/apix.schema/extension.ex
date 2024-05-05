@@ -4,7 +4,6 @@ defmodule Apix.Schema.Extension do
 
   @type t() :: %__MODULE__{
           module: module(),
-          imports: [atom()],
           delegates: [
             {
               {module(), atom()},
@@ -14,7 +13,6 @@ defmodule Apix.Schema.Extension do
         }
 
   defstruct module: nil,
-            imports: [],
             delegates: []
 
   @callback manifest :: t()

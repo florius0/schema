@@ -26,7 +26,4 @@ defmodule Apix.Schema.Ast do
             validators: nil,
             flags: [],
             meta: nil
-
-  def maybe_put_meta(%__MODULE__{} = ast, env, node), do: struct(ast, meta: Meta.new(env, node))
-  def maybe_put_meta(ast, _env, _node), do: ast
 end

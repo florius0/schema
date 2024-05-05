@@ -1,8 +1,6 @@
 defmodule Apix.Schema.Extension do
-  alias Apix.Schema.{
-    Ast,
-    Context
-  }
+  alias Apix.Schema.Ast
+  alias Apix.Schema.Context
 
   @type t() :: %__MODULE__{
           module: module(),
@@ -60,4 +58,6 @@ defmodule Apix.Schema.Extension do
       require unquote(m)
     end
   end
+
+  def extensions_config, do: Application.get_env(:apix_schema, __MODULE__, [])
 end

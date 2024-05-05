@@ -1,12 +1,15 @@
 defmodule Apix.Schema do
   alias Apix.Schema.Context
+  alias Apix.Schema.Extension
 
   @callback __apix_schemas__() :: [Context.t()]
 
   defmacro __using__(opts) do
+    extensions = opts[:extensions] || Extension.extensions_config()
+
     context =
       %Context{}
-      |> Context.add_extensions(opts[:extensions])
+      |> Context.add_extensions(extensions)
       |> Context.install!()
 
     Module.put_attribute(__CALLER__.module, :apix_schema_context, context)
@@ -34,6 +37,12 @@ defmodule Apix.Schema do
     context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], params[:do], __CALLER__)
 
     Module.put_attribute(__CALLER__.module, :apix_schemas, context)
+  end
+
+  defmacro cast(_data, _schema) do
+  end
+
+  defmacro validate(_data, _schema) do
   end
 
   defmacro __before_compile__(env) do

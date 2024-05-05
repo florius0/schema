@@ -1,14 +1,7 @@
 defmodule Apix.Schema.Context do
-  alias Apix.Schema.{
-    Ast,
-    Error,
-    Extension
-  }
-
-  @default_extensions [
-    Apix.Schema.Core.manifest(),
-    Apix.Schema.Elixir.manifest()
-  ]
+  alias Apix.Schema.Ast
+  alias Apix.Schema.Error
+  alias Apix.Schema.Extension
 
   @type t() :: %__MODULE__{
           ast: Ast.t() | nil,
@@ -25,7 +18,7 @@ defmodule Apix.Schema.Context do
             params: [],
             errors: [],
             flags: [],
-            extensions: @default_extensions
+            extensions: []
 
   def add_extensions(context, extensions) do
     extensions =
@@ -50,10 +43,10 @@ defmodule Apix.Schema.Context do
   def expression!(context, elixir_ast, schema_ast \\ nil, env) do
     schema_ast = schema_ast || context.ast || %Ast{}
 
-    prewalker = fn elixir_node, schema_ast ->
+    prewalker = fn elixir_ast_node, schema_ast ->
       context.extensions
-      |> Enum.find_value(&Extension.expression!(&1, context, elixir_node, schema_ast, env, Macro.quoted_literal?(elixir_node)))
-      |> Ast.maybe_put_meta(env, elixir_node)
+      |> Enum.find_value(&Extension.expression!(&1, context, elixir_ast_node, schema_ast, env, Macro.quoted_literal?(elixir_ast_node)))
+      |> Ast.maybe_put_meta(env, elixir_ast_node)
       |> case do
         %Ast{} = schema_ast -> {schema_ast, schema_ast}
         %Ast.Parameter{} = schema_ast -> {schema_ast, schema_ast}

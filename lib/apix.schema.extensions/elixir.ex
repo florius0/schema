@@ -1,31 +1,29 @@
-defmodule Apix.Schema.Elixir do
+defmodule Apix.Schema.Extensions.Elixir do
   alias Apix.Schema.Extension
 
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
-  alias __MODULE__.{
-    Atom,
-    String,
-    Integer,
-    Float,
-    Tuple,
-    List,
-    Map,
-    Function,
-    Module,
-    PID,
-    Port,
-    Reference,
-    Date,
-    Time,
-    DateTime,
-    NaiveDateTime,
-    Regex,
-    Uri,
-    Version,
-    Version
-  }
+  alias Apix.Schema.Extensions.Elixir.Atom
+  alias Apix.Schema.Extensions.Elixir.String
+  alias Apix.Schema.Extensions.Elixir.Integer
+  alias Apix.Schema.Extensions.Elixir.Float
+  alias Apix.Schema.Extensions.Elixir.Tuple
+  alias Apix.Schema.Extensions.Elixir.List
+  alias Apix.Schema.Extensions.Elixir.Map
+  alias Apix.Schema.Extensions.Elixir.Function
+  alias Apix.Schema.Extensions.Elixir.Module
+  alias Apix.Schema.Extensions.Elixir.PID
+  alias Apix.Schema.Extensions.Elixir.Port
+  alias Apix.Schema.Extensions.Elixir.Reference
+  alias Apix.Schema.Extensions.Elixir.Date
+  alias Apix.Schema.Extensions.Elixir.Time
+  alias Apix.Schema.Extensions.Elixir.DateTime
+  alias Apix.Schema.Extensions.Elixir.NaiveDateTime
+  alias Apix.Schema.Extensions.Elixir.Regex
+  alias Apix.Schema.Extensions.Elixir.Uri
+  alias Apix.Schema.Extensions.Elixir.Version
+  alias Apix.Schema.Extensions.Elixir.Version
 
   @behaviour Extension
 
@@ -145,11 +143,7 @@ defmodule Apix.Schema.Elixir do
     struct(schema_ast, args: schema_ast.args ++ [field: {key_type, value_type}])
   end
 
-  def expression!(_context, ast, _schema_ast, _env, _literal?) do
-    dbg(ast)
-
-    false
-  end
+  def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false
 
   def inner_expression!(context, [type_elixir_ast], schema_ast, env) do
     Context.expression!(context, type_elixir_ast, schema_ast, env)

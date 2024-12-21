@@ -48,7 +48,6 @@ defmodule Apix.Schema do
   defmacro __before_compile__(env) do
     env.module
     |> Module.get_attribute(:apix_schemas, [])
-    |> dbg()
 
     quote do
       def __apix_schemas__, do: @apix_schemas

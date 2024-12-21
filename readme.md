@@ -180,8 +180,8 @@ end
    - Comprehensive documentation, focusing on set-theoretic concepts
    - Basic export functionality implementation
 
-   - [.] expressions (`Apix.Schema.Core`)
-   - [ ] elixir types (`Apix.Schema.Elixir`)
+   - [x] expressions (`Apix.Schema.Core`)
+   - [x] elixir types (`Apix.Schema.Elixir`)
    - [ ] mix check & refactoring
    - [ ] type casting
    - [ ] imports/exports extension architecture

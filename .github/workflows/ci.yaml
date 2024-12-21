@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  TEST_MIN_COVERAGE: 40
+
+jobs:
+  check:
+    name: Run `mix check`
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.ref }}-${{ github.workflow }}-check
+      cancel-in-progress: true
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
+          elixir-version: '1.18.0'
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Restore cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./_build/
+            ./deps/
+          key: ${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ github.head_ref }}
+            main
+
+      - name: Fix mtimes
+        run: find ./ -type f -path './_build/*/lib/*/.mix/*' -exec touch -d "@0" {} \;
+
+      - name: Run `mix check`
+        run: |
+          export MIX_ENV=test
+
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+
+          # Compile via mix_machine to avoid double compilation
+          .check/tools/compiler.sh
+
+          mix check
+
+      - name: Upload compiler SARIF
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/compiler/sarif.json
+          category: compiler
+
+      - name: Upload credo SARIF
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/credo/sarif.json
+          category: credo
+
+      - name: Upload sobelow SARIF
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/credo/sarif.json
+          category: sobelow
+
+      - name: Produce GH Annotations from reports
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        continue-on-error: true
+        run: .check/report/annotations.sh
+      
+      - name: Output GH Summary from reports
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        continue-on-error: true
+        run: .check/report/summary.sh > $GITHUB_STEP_SUMMARY
+
+      - name: Store reports artifact
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.head_ref || github.ref_name }}-reports
+          path: reports
+
+      - name: Store coverage artifact
+        if: steps.mix-check.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.head_ref || github.ref_name }}-coverage
+          path: reports/ex_unit/coverage.txt
+
+      - name: Fix permissions
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        run: test -d ~/.werf/shared_context && sudo chown -R $(id -u):$(id -g) ~/.werf/shared_context || true 
+
+      - name: Save cache
+        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ./_build/
+            ./deps/
+          key: ${{ github.head_ref || github.ref_name }}-${{ github.sha }}

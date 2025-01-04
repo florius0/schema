@@ -111,7 +111,7 @@ defmodule Apix.Schema.Context do
 
   See `#{inspect Extension}.expression!/6` and `c:#{inspect Extension}.expression!/5`.
   """
-  @spec expression!(t(), Macro.t(), nil | Ast.t(), Macro.Env.t()) :: t()
+  @spec expression!(t(), Macro.t(), nil | Ast.t(), Macro.Env.t()) :: Ast.t()
   def expression!(context, elixir_ast, schema_ast \\ nil, env) do
     schema_ast = schema_ast || context.ast || %Ast{}
 

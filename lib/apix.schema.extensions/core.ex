@@ -1,6 +1,9 @@
 defmodule Apix.Schema.Extensions.Core do
+  alias Apix.Schema
+
   alias Apix.Schema.Extension
 
+  alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Parameter
   alias Apix.Schema.Context
 
@@ -10,20 +13,44 @@ defmodule Apix.Schema.Extensions.Core do
   alias Apix.Schema.Extensions.Core.Any
   alias Apix.Schema.Extensions.Core.Const
 
+  @manifest %Extension{
+    module: __MODULE__,
+    delegates: [
+      {
+        {Elixir.Any, :t},
+        {Any, :t}
+      }
+    ]
+  }
+
+  @moduledoc """
+  Core functionality of `#{inspect Schema}`.
+
+  #{Extension.delegates_doc(@manifest)}
+
+  ## Expressions
+
+  - `shortdoc "smth"` - defines `:shortdoc` in `t:#{inspect Ast}.t/0`.
+  - `doc "smth"` – defines `:doc` in `t:#{inspect Ast}.t/0`.
+  - `example value` – adds example to `:examples` in `t:#{inspect Ast}.t/0`.
+  - `a and b` – builds `and` schema expression – the value is expected to be valid against `a` and `b` schema expressions.
+  - `a or b` – builds `or` schema expression – the value is expected to be valid against `a` or `b` schema expressions.
+  - `not a` – builds `not` schema expression – the value is expected to be invalid against `a` schema expression
+  - module attribute expansion
+  - literal expansion
+  - parameter referencing
+  - remote (defined in other module) schema referencing
+
+  > #### Info {: .info}
+  >
+  > Due to technical limitations, local (defied in same module) schema referencing is a separate extension #{inspect Apix.Schema.Extensions.Core.LocalReference}.
+  > #{inspect Apix.Schema.Extensions.Core.LocalReference} should be installed as last extension to prevent all other expressions to be recognized as local references
+  """
+
   @behaviour Extension
 
   @impl Extension
-  def manifest do
-    %Extension{
-      module: __MODULE__,
-      delegates: [
-        {
-          {Elixir.Any, :t},
-          {Any, :t}
-        }
-      ]
-    }
-  end
+  def manifest, do: @manifest
 
   @impl Extension
   def expression!(_context, {:shortdoc, _, [elixir_ast]}, schema_ast, env, _literal?) do

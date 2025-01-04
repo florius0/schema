@@ -1,4 +1,6 @@
 defmodule Apix.Schema.Extensions.Elixir do
+  alias Apix.Schema
+
   alias Apix.Schema.Extension
 
   alias Apix.Schema.Ast
@@ -25,96 +27,108 @@ defmodule Apix.Schema.Extensions.Elixir do
   alias Apix.Schema.Extensions.Elixir.Version
   alias Apix.Schema.Extensions.Elixir.Version
 
+  @manifest %Extension{
+    module: __MODULE__,
+    delegates: [
+      {
+        {Elixir.Atom, :t},
+        {Atom, :t}
+      },
+      {
+        {Elixir.String, :t},
+        {String, :t}
+      },
+      {
+        {Elixir.Integer, :t},
+        {Integer, :t}
+      },
+      {
+        {Elixir.Float, :t},
+        {Float, :t}
+      },
+      {
+        {Elixir.Tuple, :t},
+        {Tuple, :t}
+      },
+      {
+        {Elixir.List, :t},
+        {List, :t}
+      },
+      {
+        {Elixir.Map, :t},
+        {Map, :t}
+      },
+      {
+        {Elixir.Function, :t},
+        {Function, :t}
+      },
+      {
+        {Elixir.Module, :t},
+        {Module, :t}
+      },
+      {
+        {Elixir.PID, :t},
+        {PID, :t}
+      },
+      {
+        {Elixir.Port, :t},
+        {Port, :t}
+      },
+      {
+        {Elixir.Reference, :t},
+        {Reference, :t}
+      },
+      {
+        {Elixir.Date, :t},
+        {Date, :t}
+      },
+      {
+        {Elixir.Time, :t},
+        {Time, :t}
+      },
+      {
+        {Elixir.DateTime, :t},
+        {DateTime, :t}
+      },
+      {
+        {Elixir.NaiveDateTime, :t},
+        {NaiveDateTime, :t}
+      },
+      {
+        {Elixir.Regex, :t},
+        {Regex, :t}
+      },
+      {
+        {Elixir.Uri, :t},
+        {Uri, :t}
+      },
+      {
+        {Elixir.Version, :t},
+        {Version, :t}
+      },
+      {
+        {Elixir.Version.Requirement, :t},
+        {Version.Requirement, :t}
+      }
+    ]
+  }
+
+  @moduledoc """
+  Defines `#{inspect Schema}` Extension to support Elixir types.
+
+  #{Extension.delegates_doc(@manifest)}
+
+  ## Expressions
+
+  - `item`
+  - `rest`
+  - `field`
+  """
+
   @behaviour Extension
 
   @impl Extension
-  def manifest do
-    %Extension{
-      module: __MODULE__,
-      delegates: [
-        {
-          {Elixir.Atom, :t},
-          {Atom, :t}
-        },
-        {
-          {Elixir.String, :t},
-          {String, :t}
-        },
-        {
-          {Elixir.Integer, :t},
-          {Integer, :t}
-        },
-        {
-          {Elixir.Float, :t},
-          {Float, :t}
-        },
-        {
-          {Elixir.Tuple, :t},
-          {Tuple, :t}
-        },
-        {
-          {Elixir.List, :t},
-          {List, :t}
-        },
-        {
-          {Elixir.Map, :t},
-          {Map, :t}
-        },
-        {
-          {Elixir.Function, :t},
-          {Function, :t}
-        },
-        {
-          {Elixir.Module, :t},
-          {Module, :t}
-        },
-        {
-          {Elixir.PID, :t},
-          {PID, :t}
-        },
-        {
-          {Elixir.Port, :t},
-          {Port, :t}
-        },
-        {
-          {Elixir.Reference, :t},
-          {Reference, :t}
-        },
-        {
-          {Elixir.Date, :t},
-          {Date, :t}
-        },
-        {
-          {Elixir.Time, :t},
-          {Time, :t}
-        },
-        {
-          {Elixir.DateTime, :t},
-          {DateTime, :t}
-        },
-        {
-          {Elixir.NaiveDateTime, :t},
-          {NaiveDateTime, :t}
-        },
-        {
-          {Elixir.Regex, :t},
-          {Regex, :t}
-        },
-        {
-          {Elixir.Uri, :t},
-          {Uri, :t}
-        },
-        {
-          {Elixir.Version, :t},
-          {Version, :t}
-        },
-        {
-          {Elixir.Version.Requirement, :t},
-          {Version.Requirement, :t}
-        }
-      ]
-    }
-  end
+  def manifest, do: @manifest
 
   @impl Extension
   def expression!(context, {:item, _, elixir_ast}, schema_ast, env, _literal?) do

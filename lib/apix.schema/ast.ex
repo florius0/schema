@@ -43,7 +43,7 @@ defmodule Apix.Schema.Ast do
             shortdoc: nil,
             doc: nil,
             examples: [],
-            validators: nil,
+            validators: [],
             flags: [],
             meta: nil
 end

@@ -147,4 +147,27 @@ defmodule Apix.Schema.Extension do
   ```
   """
   def extensions_config, do: Application.get_env(:apix_schema, __MODULE__, [])
+
+  def delegates_doc(%__MODULE__{delegates: []}) do
+    """
+    ## Delegates
+
+    This extension defines no delegates
+    """
+  end
+
+  def delegates_doc(%__MODULE__{delegates: [_ | _] = d}) do
+    d =
+      d
+      |> Enum.map(fn {{fm, ft}, {tm, tt}} ->
+        "- `#{inspect fm}.#{ft}` -> `#{inspect tm}.#{tt}`."
+      end)
+      |> Enum.join("\n")
+
+    """
+    ## Delegates
+
+    #{d}
+    """
+  end
 end

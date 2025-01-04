@@ -9,9 +9,9 @@ defmodule Apix.Schema.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       # Docs
-      name: "MyApp",
-      source_url: "https://github.com/USER/PROJECT",
-      homepage_url: "http://YOUR_PROJECT_HOMEPAGE",
+      name: inspect(Apix.Schema),
+      source_url: "https://github.com/florius0/schema",
+      homepage_url: "https://github.com/florius0/schema",
       docs: &docs/0,
       aliases: aliases()
     ]

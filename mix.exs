@@ -8,11 +8,7 @@ defmodule Apix.Schema.MixProject do
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      # Docs
-      name: inspect(Apix.Schema),
-      source_url: "https://github.com/florius0/schema",
-      homepage_url: "https://github.com/florius0/schema",
-      docs: &docs/0,
+      docs: docs(),
       aliases: aliases()
     ]
   end
@@ -40,7 +36,33 @@ defmodule Apix.Schema.MixProject do
 
   defp docs do
     [
-      main: inspect(Apix.Schema)
+      name: inspect(Apix.Schema),
+      source_url: "https://github.com/florius0/schema",
+      homepage_url: "https://github.com/florius0/schema",
+      groups_for_modules: [
+        # Apix.Schema
+        Architecture: [
+          Apix.Schema.Ast,
+          Apix.Schema.Ast.Meta,
+          Apix.Schema.Ast.Parameter,
+          Apix.Schema.Context,
+          Apix.Schema.Error,
+          Apix.Schema.Extension,
+          Apix.Schema.Validator
+        ],
+        Extensions: [
+          Apix.Schema.Extensions.Core,
+          Apix.Schema.Extensions.Core.LocalReference,
+          Apix.Schema.Extensions.Elixir
+        ],
+        Misc: [
+          Apix.Void
+        ]
+      ],
+      nest_modules_by_prefix: [
+        Apix.Schema,
+        Apix.Schema.Extensions
+      ]
     ]
   end
 

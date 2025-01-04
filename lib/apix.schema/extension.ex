@@ -116,7 +116,7 @@ defmodule Apix.Schema.Extension do
   end
 
   @doc """
-  Invokes `c:validate_ast!/5`
+  Invokes `c:expression!/5`
   """
   @spec expression!(t(), Context.t(), Macro.t(), Ast.t(), Macro.Env.t(), literal? :: boolean()) :: Ast.t() | false
   def expression!(%__MODULE__{module: m}, context, elixir_ast, schema_ast, env, literal?) do
@@ -128,7 +128,7 @@ defmodule Apix.Schema.Extension do
   end
 
   @doc """
-  Builds `#{inspect Kernel}.require/2` into `t:#{inspect Macro}.t/0`
+  Builds `#{inspect Kernel.SpecialForms}.require/2` into `t:#{inspect Macro}.t/0`
   """
   @spec require(t()) :: Macro.t()
   def require(%__MODULE__{module: m}) do

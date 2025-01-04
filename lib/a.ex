@@ -1,6 +1,8 @@
 defmodule A do
   use Apix.Schema
 
+  @moduledoc false
+
   schema tuple1: Tuple.t(), params: [:p1, p2: 1] do
     # shortdoc "Tuple schema"
 

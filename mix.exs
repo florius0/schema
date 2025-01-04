@@ -8,6 +8,11 @@ defmodule Apix.Schema.MixProject do
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      # Docs
+      name: "MyApp",
+      source_url: "https://github.com/USER/PROJECT",
+      homepage_url: "http://YOUR_PROJECT_HOMEPAGE",
+      docs: &docs/0,
       aliases: aliases()
     ]
   end
@@ -30,6 +35,12 @@ defmodule Apix.Schema.MixProject do
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: inspect(Apix.Schema)
     ]
   end
 

@@ -1,6 +1,21 @@
 defmodule Apix.Schema.Ast.Meta do
   alias Apix.Schema.Ast
+  alias Apix.Schema.Extension
 
+  @moduledoc """
+  Metadata of the AST and utilities to work with it.
+  """
+
+  @typedoc """
+  Metadata struct
+
+  ## Fields
+
+  - `:file` – file the AST node was defined in.
+  - `:line` – line the AST node was defined on.
+  - `:module` – module the AST node was defined in.
+  - `:generated_by` – `#{inspect Extension}` that generated the AST node.
+  """
   @type t() :: %__MODULE__{
           file: String.t() | nil,
           line: integer() | nil,
@@ -13,6 +28,14 @@ defmodule Apix.Schema.Ast.Meta do
             module: nil,
             generated_by: nil
 
+  @doc """
+  Helper function to put metadata in `t:#{inspect Ast}.t/0` or `t:#{inspect Ast.Parameter}.t/0`.
+
+  If invoked on anything else, just returns the value passed.
+  """
+  @spec maybe_put_in(maybe_ast, [opt]) :: maybe_ast
+        when maybe_ast: Ast.t() | Ast.Parameter.t() | any(),
+             opt: {:env, Macro.Env.t()} | {:elixir_ast, Macro.t()}
   def maybe_put_in(ast, opts \\ [])
 
   def maybe_put_in(%Ast{} = ast, opts), do: put_in_meta_field(ast, opts)

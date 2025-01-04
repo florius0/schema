@@ -1,15 +1,56 @@
 defmodule Apix.Schema.Context do
+  alias Apix.Schema
   alias Apix.Schema.Ast
   alias Apix.Schema.Error
   alias Apix.Schema.Extension
 
+  @moduledoc """
+  The Context of all `#{inspect Schema}` operations.
+
+  This module provides data structure and high-level interface functions to run all `#{inspect Schema}` operations in.
+  """
+
+  @typedoc """
+  The Context struct.
+
+  ## Fields
+
+  - `ast` – AST of the current schema.
+  - `data` – data the current operation operation in being run on.
+  - `module` – module in which current schema is defined.
+  - `schema` - name of the schema in the module.
+  - `params` – parameters the schema takes in, in a form of `[parameter_name: parameter arity]`.
+  - `errors` – errors the current operation resulted in.
+  - `flags` – flags for the current schema/operation.
+  - `extensions` – extensions the schema was defined with.
+  """
   @type t() :: %__MODULE__{
           ast: Ast.t() | nil,
           data: any(),
+          module: module(),
+          schema: Schema.schema(),
+          params: params(),
           errors: [Error.t()],
           flags: keyword(),
           extensions: [Extension.t()]
         }
+
+  @typedoc """
+  Parameters the schema takes in.
+
+  Normalized to keyword of `t:arity/0`.
+  """
+  @type params() :: [{atom(), arity()}]
+
+  @typedoc """
+  Parameters the schema takes in in their raw form:
+
+  A list of either:
+
+  - `:parameter_name` – zero-arity parameter
+  - `parameter_name: parameter_arity` – parameter in normal form
+  """
+  @type raw_params() :: [atom() | {atom(), arity()}]
 
   defstruct ast: nil,
             data: nil,
@@ -20,6 +61,13 @@ defmodule Apix.Schema.Context do
             flags: [],
             extensions: []
 
+  @doc """
+  Adds an extension to the context.
+
+  Extension can be passed as module which implements `#{inspect Extension}` behaviour, or the extension manifest (see `t:#{inspect Extension}.t/0`)
+  Same extensions can not be added twice
+  """
+  @spec add_extensions(t(), module() | Extension.t()) :: t()
   def add_extensions(context, extensions) do
     extensions =
       extensions
@@ -34,12 +82,36 @@ defmodule Apix.Schema.Context do
     struct(context, extensions: extensions)
   end
 
+  @doc """
+  Installs all extensions in the context.
+
+  See `#{inspect Extension}.install!/2` and `c:#{inspect Extension}.install!/1`.
+  """
+  @spec install!(t()) :: t()
   def install!(context), do: Enum.reduce(context.extensions, context, &Extension.install!/2)
 
+  @doc """
+  Requires all extensions in the context.
+
+  See `#{inspect Extension}.require/1`.
+  """
+  @spec require(t()) :: Macro.t()
   def require(context), do: Enum.map(context.extensions, &Extension.require/1)
 
+  @doc """
+  Validates AST through all extensions.
+
+  See `#{inspect Extension}.validate_ast!/2` and `c:#{inspect Extension}.validate_ast!/1`.
+  """
+  @spec validate_ast!(t()) :: :ok
   def validate_ast!(context), do: Enum.each(context.extension, &Extension.validate_ast!(&1, context))
 
+  @doc """
+  Transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0` through all extensions.
+
+  See `#{inspect Extension}.expression!/6` and `c:#{inspect Extension}.expression!/5`.
+  """
+  @spec expression!(t(), Macro.t(), nil | Ast.t(), Macro.Env.t()) :: t()
   def expression!(context, elixir_ast, schema_ast \\ nil, env) do
     schema_ast = schema_ast || context.ast || %Ast{}
 
@@ -62,6 +134,12 @@ defmodule Apix.Schema.Context do
     |> elem(1)
   end
 
+  @doc """
+  Transforms schema definition from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0`.
+
+  See `expression!/4`.
+  """
+  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), Macro.Env.t()) :: t()
   def schema_definition_expression!(context, schema_name, elixir_type_ast, params, elixir_do_block_ast, env) do
     env = Code.env_for_eval(env)
 
@@ -75,10 +153,17 @@ defmodule Apix.Schema.Context do
     |> map_ast(&expression!(&1, elixir_do_block_ast, env))
   end
 
+  @doc """
+  TODO: Casts types.
+  """
+  @spec cast(t()) :: t()
   def cast(context) do
     context
   end
 
+  @doc """
+  Context functor on `:ast`.
+  """
   @spec map_ast(atom() | struct(), (any() -> any())) :: struct()
   def map_ast(context, fun), do: struct(context, ast: fun.(context))
 end

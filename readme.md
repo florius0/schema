@@ -116,7 +116,6 @@ defmodule Api.Responses do
     rest Api.Response.t(auto())
   end
 end
-
 ```
 
 ## Documentation Outline

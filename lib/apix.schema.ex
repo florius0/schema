@@ -2,8 +2,25 @@ defmodule Apix.Schema do
   alias Apix.Schema.Context
   alias Apix.Schema.Extension
 
+  @moduledoc "readme.md"
+             |> File.read!()
+             |> String.split("\n")
+             |> Enum.drop(2)
+             |> Enum.join("\n")
+
+  @typedoc """
+  Schema name
+  """
+  @type schema() :: atom()
+
+  @doc """
+  Callback to return all schemas defined in the module
+  """
   @callback __apix_schemas__() :: [Context.t()]
 
+  @doc """
+  Sets default context and imports `schema/2` macro
+  """
   defmacro __using__(opts) do
     extensions = opts[:extensions] || Extension.extensions_config()
 

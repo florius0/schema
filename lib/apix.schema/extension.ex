@@ -158,11 +158,9 @@ defmodule Apix.Schema.Extension do
 
   def delegates_doc(%__MODULE__{delegates: [_ | _] = d}) do
     d =
-      d
-      |> Enum.map(fn {{fm, ft}, {tm, tt}} ->
+      Enum.map_join(d, "\n", fn {{fm, ft}, {tm, tt}} ->
         "- `#{inspect fm}.#{ft}` -> `#{inspect tm}.#{tt}`."
       end)
-      |> Enum.join("\n")
 
     """
     ## Delegates

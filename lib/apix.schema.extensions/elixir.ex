@@ -174,20 +174,6 @@ defmodule Apix.Schema.Extensions.Elixir do
 
   def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false
 
-  @spec inner_expression!(
-          Apix.Schema.Context.t(),
-          [
-            atom()
-            | binary()
-            | list()
-            | number()
-            | {any(), any()}
-            | {atom() | {any(), list(), atom() | list()}, [{any(), any()}], atom() | list()},
-            ...
-          ],
-          atom() | %{:__struct__ => atom(), optional(:flags) => list(), optional(atom()) => any()},
-          Macro.Env.t()
-        ) :: Apix.Schema.Ast.t()
   def inner_expression!(context, [type_elixir_ast], schema_ast, env) do
     Context.expression!(context, type_elixir_ast, schema_ast, env)
   end

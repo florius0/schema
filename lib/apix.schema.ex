@@ -22,7 +22,12 @@ defmodule Apix.Schema do
   Sets default context and imports `schema/2` macro
   """
   defmacro __using__(opts) do
-    extensions = opts[:extensions] || Extension.extensions_config()
+    extensions =
+      opts[:extensions]
+      |> Code.eval_quoted([], __CALLER__)
+      |> elem(0)
+
+    extensions = extensions || Extension.extensions_config()
 
     context =
       %Context{}

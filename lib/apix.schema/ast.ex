@@ -24,26 +24,29 @@ defmodule Apix.Schema.Ast do
   - `:validators` – TODO.
   - `:flags` – flags that are defined in this AST node.
   - `:meta` – See `t:#{inspect Meta}.t/0`.
+  - `:parameter?` - is this AST node a parameter invocation?
   """
   @type t() :: %__MODULE__{
           module: module() | nil,
           schema: Schema.schema(),
-          args: any(),
+          args: [any()],
           shortdoc: String.t() | nil,
           doc: String.t() | nil,
           examples: [any()] | nil,
           validators: [Validator.t()],
           flags: keyword(),
-          meta: Meta.t() | nil
+          meta: Meta.t() | nil,
+          parameter?: boolean()
         }
 
   defstruct module: nil,
             schema: nil,
-            args: nil,
+            args: [],
             shortdoc: nil,
             doc: nil,
             examples: [],
             validators: [],
             flags: [],
-            meta: nil
+            meta: nil,
+            parameter?: false
 end

@@ -13,14 +13,12 @@ defmodule Apix.Schema.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger]
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:ex_check, "~> 0.14.0", only: [:dev, :test], runtime: false},
@@ -44,7 +42,6 @@ defmodule Apix.Schema.MixProject do
         Architecture: [
           Apix.Schema.Ast,
           Apix.Schema.Ast.Meta,
-          Apix.Schema.Ast.Parameter,
           Apix.Schema.Context,
           Apix.Schema.Error,
           Apix.Schema.Extension,

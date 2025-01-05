@@ -47,9 +47,11 @@ defmodule Apix.Schema.Extension do
   means to re-write all `Elixir.Any.t(...` schema expressions into `Apix.Schema.Extensions.Core.Any.t(...`.
   """
   @type delegate() :: {
-          from :: {module(), atom()},
-          to :: {module(), atom()}
+          from :: delegate_target(),
+          to :: delegate_target()
         }
+
+  @type delegate_target() :: {module(), atom()}
 
   defstruct module: nil,
             delegates: []

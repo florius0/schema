@@ -4,7 +4,6 @@ defmodule Apix.Schema.Extensions.Core do
   alias Apix.Schema.Extension
 
   alias Apix.Schema.Ast
-  alias Apix.Schema.Ast.Parameter
   alias Apix.Schema.Context
 
   alias Apix.Schema.Extensions.Core.And
@@ -36,10 +35,10 @@ defmodule Apix.Schema.Extensions.Core do
   - `a and b` – builds `and` schema expression – the value is expected to be valid against `a` and `b` schema expressions.
   - `a or b` – builds `or` schema expression – the value is expected to be valid against `a` or `b` schema expressions.
   - `not a` – builds `not` schema expression – the value is expected to be invalid against `a` schema expression
-  - module attribute expansion
-  - literal expansion
-  - parameter referencing
-  - remote (defined in other module) schema referencing
+  - module attribute expansion as const – the value is expected to be equal to.
+  - literal expansion as const – the value is expected to be equal to.
+  - remote (defined in other module) schema referencing.
+  - parameter referencing.
 
   > #### Info {: .info}
   >
@@ -53,6 +52,7 @@ defmodule Apix.Schema.Extensions.Core do
   def manifest, do: @manifest
 
   @impl Extension
+  @spec expression!(any(), any(), any(), any(), any()) :: false | struct()
   def expression!(_context, {:shortdoc, _, [elixir_ast]}, schema_ast, env, _literal?) do
     {arg, _, _} = Code.eval_quoted_with_env(elixir_ast, [], env)
 
@@ -75,7 +75,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: And,
       schema: :t,
-      args: Context.expression!(context, args, schema_ast, env)
+      args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
     )
   end
 
@@ -83,7 +83,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: Or,
       schema: :t,
-      args: Context.expression!(context, args, schema_ast, env)
+      args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
     )
   end
 
@@ -91,7 +91,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: Not,
       schema: :t,
-      args: Context.expression!(context, args, schema_ast, env)
+      args: [Context.expression!(context, args, schema_ast, env)]
     )
   end
 
@@ -109,16 +109,33 @@ defmodule Apix.Schema.Extensions.Core do
     )
   end
 
-  def expression!(_context, {name, _, nil}, _schema_ast, _env, false) do
-    %Parameter{name: name}
-  end
-
   def expression!(context, {{:., _, [module, schema]}, _, args}, schema_ast, env, false) do
     struct(schema_ast,
       module: Macro.expand(module, env),
       schema: schema,
       args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
     )
+  end
+
+  def expression!(context, {name, _, args}, schema_ast, env, false) do
+    args = args || []
+    len_args = length(args)
+
+    context.params
+    |> Enum.any?(fn
+      {^name, ^len_args, _} -> true
+      _ -> false
+    end)
+    |> if do
+      struct(schema_ast,
+        module: nil,
+        schema: name,
+        args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env)),
+        parameter?: true
+      )
+    else
+      false
+    end
   end
 
   def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false

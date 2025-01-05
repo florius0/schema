@@ -97,7 +97,7 @@ end
 
 defmodule Api.Response do
   # schema named :t of type Struct.t()
-  schema t: Struct.t(), params: [:data, error: Api.Error.t()] do
+  schema t: Struct.t(), params: [:data, error: 0 \\ Api.Error.t()] do
     # field of type data()
     field :data, data()
 

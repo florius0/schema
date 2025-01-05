@@ -29,17 +29,16 @@ defmodule Apix.Schema.Ast.Meta do
             generated_by: nil
 
   @doc """
-  Helper function to put metadata in `t:#{inspect Ast}.t/0` or `t:#{inspect Ast.Parameter}.t/0`.
+  Helper function to put metadata in `t:#{inspect Ast}.t/0`.
 
   If invoked on anything else, just returns the value passed.
   """
   @spec maybe_put_in(maybe_ast, [opt]) :: maybe_ast
-        when maybe_ast: Ast.t() | Ast.Parameter.t() | any(),
+        when maybe_ast: Ast.t() | any(),
              opt: {:env, Macro.Env.t()} | {:elixir_ast, Macro.t()}
   def maybe_put_in(ast, opts \\ [])
 
   def maybe_put_in(%Ast{} = ast, opts), do: put_in_meta_field(ast, opts)
-  def maybe_put_in(%Ast.Parameter{} = ast, opts), do: put_in_meta_field(ast, opts)
   def maybe_put_in(ast, _opts), do: ast
 
   defp put_in_meta_field(struct, opts) do

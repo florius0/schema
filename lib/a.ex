@@ -4,15 +4,6 @@ defmodule A do
   @moduledoc false
 
   schema tuple1: Tuple.t(), params: [:p1, p2: 1] do
-    # shortdoc "Tuple schema"
-
-    # doc """
-    # Consists of two elements
-    # """
-
-    # example {1, 2}
-    # example {2, 3}
-
     # item Any.t()
 
     # item Any.t() do
@@ -41,6 +32,4 @@ defmodule A do
     #   end
     # end
   end
-
-  # schema(name: :tuple1, type: Tuple.t(), params: [:p1, p2: 1], do: doc("123"))
 end

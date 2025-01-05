@@ -112,6 +112,8 @@ defmodule Apix.Schema.Context do
   @spec validate_ast!(t()) :: :ok
   def validate_ast!(%__MODULE__{} = context), do: Enum.each(context.extensions, &Extension.validate_ast!(&1, context))
 
+  @dialyzer {:no_return, expression!: 4}
+
   @doc """
   Transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0` through all extensions.
 

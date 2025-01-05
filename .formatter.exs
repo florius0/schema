@@ -7,8 +7,8 @@ locals_without_parens = [
   item: :*,
   rest: :*,
   field: :*,
-  pattern_field: :*,
-  key_value: :*,
+  key: :*,
+  value: :*,
   validate: :*
 ]
 

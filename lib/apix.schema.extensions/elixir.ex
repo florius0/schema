@@ -23,7 +23,7 @@ defmodule Apix.Schema.Extensions.Elixir do
   alias Apix.Schema.Extensions.Elixir.DateTime
   alias Apix.Schema.Extensions.Elixir.NaiveDateTime
   alias Apix.Schema.Extensions.Elixir.Regex
-  alias Apix.Schema.Extensions.Elixir.Uri
+  alias Apix.Schema.Extensions.Elixir.URI
   alias Apix.Schema.Extensions.Elixir.Version
   alias Apix.Schema.Extensions.Elixir.Version
 
@@ -99,8 +99,8 @@ defmodule Apix.Schema.Extensions.Elixir do
         {Regex, :t}
       },
       {
-        {Elixir.Uri, :t},
-        {Uri, :t}
+        {Elixir.URI, :t},
+        {URI, :t}
       },
       {
         {Elixir.Version, :t},
@@ -143,22 +143,51 @@ defmodule Apix.Schema.Extensions.Elixir do
     struct(schema_ast, args: schema_ast.args ++ [rest: type])
   end
 
-  def expression!(context, {:field, _, [[do: {:__block__, _, [{:key, _, key_elixir_ast}, {:value, _, value_elixir_ast} | _]}]]}, schema_ast, env, _literal?) do
-    key_type = inner_expression!(context, key_elixir_ast, %Ast{}, env)
-    value_type = inner_expression!(context, value_elixir_ast, %Ast{}, env)
+  def expression!(context, {:field, _, elixir_ast}, schema_ast, env, _literal?) do
+    {key_type, value_type} =
+      if match?([do: {:__block__, _, [{:key, _, _}, {:value, _, _} | _]}], Elixir.List.last(elixir_ast)) do
+        {
+          flags,
+          [[do: {:__block__, _, [{:key, _, key_elixir_ast}, {:value, _, value_elixir_ast} | _]}]]
+        } = Enum.split(elixir_ast, -1)
 
-    struct(schema_ast, args: schema_ast.args ++ [field: {key_type, value_type}])
-  end
+        {
+          inner_expression!(context, key_elixir_ast, %Ast{}, env),
+          context
+          |> inner_expression!(value_elixir_ast, %Ast{}, env)
+          |> struct(flags: Elixir.List.flatten(flags))
+        }
+      else
+        [
+          key_elixir_ast
+          | value_elixir_ast
+        ] = elixir_ast
 
-  def expression!(context, {:field, _, [key_elixir_ast | value_elixir_ast]}, schema_ast, env, _literal?) do
-    key_type = Context.expression!(context, key_elixir_ast, %Ast{}, env)
-    value_type = inner_expression!(context, value_elixir_ast, %Ast{}, env)
+        {
+          inner_expression!(context, [key_elixir_ast], %Ast{}, env),
+          inner_expression!(context, value_elixir_ast, %Ast{}, env)
+        }
+      end
 
     struct(schema_ast, args: schema_ast.args ++ [field: {key_type, value_type}])
   end
 
   def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false
 
+  @spec inner_expression!(
+          Apix.Schema.Context.t(),
+          [
+            atom()
+            | binary()
+            | list()
+            | number()
+            | {any(), any()}
+            | {atom() | {any(), list(), atom() | list()}, [{any(), any()}], atom() | list()},
+            ...
+          ],
+          atom() | %{:__struct__ => atom(), optional(:flags) => list(), optional(atom()) => any()},
+          Macro.Env.t()
+        ) :: Apix.Schema.Ast.t()
   def inner_expression!(context, [type_elixir_ast], schema_ast, env) do
     Context.expression!(context, type_elixir_ast, schema_ast, env)
   end

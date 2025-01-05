@@ -51,9 +51,6 @@ defmodule Apix.Schema.MixProject do
           Apix.Schema.Extensions.Core,
           Apix.Schema.Extensions.Core.LocalReference,
           Apix.Schema.Extensions.Elixir
-        ],
-        Misc: [
-          Apix.Void
         ]
       ],
       nest_modules_by_prefix: [

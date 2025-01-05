@@ -629,7 +629,6 @@ defmodule Apix.SchemaTest do
              ] = P.__apix_schemas__()
     end
 
-    # Fails due to https://github.com/elixir-lang/elixir/issues/14144
     test "expressions | module attribute expansion as const – the value is expected to be equal to" do
       defmodule Q do
         use Apix.Schema

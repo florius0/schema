@@ -47,18 +47,25 @@ defmodule Apix.Schema do
   end
 
   defmacro schema(params, block \\ [do: {:__block__, [], []}]) do
-    context = Module.get_attribute(__CALLER__.module, :apix_schema_context)
+    quote location: :keep,
+          generated: true,
+          bind_quoted: [
+            params: Macro.escape(params),
+            block: Macro.escape(block)
+          ] do
+      context = Module.get_attribute(__ENV__.module, :apix_schema_context)
 
-    {schema_name, type_ast} =
-      case params do
-        [{schema, type_ast} | _] -> {schema, type_ast}
-      end
+      {schema_name, type_ast} =
+        case params do
+          [{schema, type_ast} | _] -> {schema, type_ast}
+        end
 
-    params = Keyword.merge(block, params)
+      params = Keyword.merge(block, params)
 
-    context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], params[:do], __CALLER__)
+      context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], params[:do], __ENV__)
 
-    Module.put_attribute(__CALLER__.module, :apix_schemas, context)
+      Module.put_attribute(__ENV__.module, :apix_schemas, context)
+    end
   end
 
   defmacro cast(_data, _schema) do

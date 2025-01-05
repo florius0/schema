@@ -603,7 +603,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
     end
 
     test "expressions | item" do
-      defmodule TestSchema21 do
+      defmodule TestSchema22 do
         use Apix.Schema
 
         schema a: Tuple.t() do
@@ -683,17 +683,17 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema21,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema22,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema21.__apix_schemas__()
+             ] = TestSchema22.__apix_schemas__()
     end
 
     test "expressions | rest" do
-      defmodule TestSchema22 do
+      defmodule TestSchema23 do
         use Apix.Schema
 
         schema a: Tuple.t() do
@@ -773,17 +773,17 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema22,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema23,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema22.__apix_schemas__()
+             ] = TestSchema23.__apix_schemas__()
     end
 
     test "expressions | field" do
-      defmodule TestSchema21 do
+      defmodule TestSchema24 do
         use Apix.Schema
 
         schema a: Map.t() do
@@ -989,13 +989,13 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema21,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema24,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema21.__apix_schemas__()
+             ] = TestSchema24.__apix_schemas__()
     end
   end
 end

@@ -106,6 +106,7 @@ defmodule Api.Response do
 
     # validates that error() is subtype of Api.Error.t()
     validate is_subtype(error(), Api.Error.t())
+    validate is_subtype(data(), Map.t())
   end
 end
 

@@ -6,10 +6,14 @@ defmodule Apix.Schema.Extensions.Core do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
+  alias Apix.Schema.Extensions.Core.Any
+  alias Apix.Schema.Extensions.Core.None
+  alias Apix.Schema.Extensions.Core.Bottom
+
   alias Apix.Schema.Extensions.Core.And
   alias Apix.Schema.Extensions.Core.Or
   alias Apix.Schema.Extensions.Core.Not
-  alias Apix.Schema.Extensions.Core.Any
+
   alias Apix.Schema.Extensions.Core.Const
 
   @manifest %Extension{
@@ -18,6 +22,14 @@ defmodule Apix.Schema.Extensions.Core do
       {
         {Elixir.Any, :t},
         {Any, :t}
+      },
+      {
+        {Elixir.None, :t},
+        {None, :t}
+      },
+      {
+        {Elixir.Bottom, :t},
+        {Bottom, :t}
       }
     ]
   }

@@ -34,8 +34,68 @@ defmodule Apix.Schema.Extensions.CoreTest do
              ] = TestSchema1.__apix_schemas__()
     end
 
-    test "expressions | `shortdoc \"smth\"` - defines `:shortdoc` in `t:#{inspect Ast}.t/0`" do
+    test "delegates | `None.t` -> `Apix.Schema.Extensions.Core.None.t`" do
       defmodule TestSchema2 do
+        use Apix.Schema
+
+        schema a: None.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Core.None,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema2,
+                 schema: :a,
+                 params: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema2.__apix_schemas__()
+    end
+
+    test "delegates | `Bottom.t` -> `Apix.Schema.Extensions.Core.Bottom.t`" do
+      defmodule TestSchema3 do
+        use Apix.Schema
+
+        schema a: Bottom.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Core.Bottom,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema3,
+                 schema: :a,
+                 params: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema3.__apix_schemas__()
+    end
+
+    test "expressions | `shortdoc \"smth\"` - defines `:shortdoc` in `t:#{inspect Ast}.t/0`" do
+      defmodule TestSchema4 do
         use Apix.Schema
 
         schema a: Any.t() do
@@ -56,15 +116,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema2,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema4,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema2.__apix_schemas__()
+             ] = TestSchema4.__apix_schemas__()
 
-      defmodule TestSchema3 do
+      defmodule TestSchema5 do
         use Apix.Schema
 
         schema a: Any.t() do
@@ -86,17 +146,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema3,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema5,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema3.__apix_schemas__()
+             ] = TestSchema5.__apix_schemas__()
     end
 
     test "expressions | `doc \"smth\"` – defines `:doc` in `t:#{inspect Ast}.t/0`" do
-      defmodule TestSchema4 do
+      defmodule TestSchema6 do
         use Apix.Schema
 
         schema a: Any.t() do
@@ -117,15 +177,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema4,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema6,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema4.__apix_schemas__()
+             ] = TestSchema6.__apix_schemas__()
 
-      defmodule TestSchema5 do
+      defmodule TestSchema7 do
         use Apix.Schema
 
         schema a: Any.t() do
@@ -147,17 +207,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema5,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema7,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema5.__apix_schemas__()
+             ] = TestSchema7.__apix_schemas__()
     end
 
     test "expressions | `example value` – adds example to `:examples` in `t:#{inspect Ast}.t/0`" do
-      defmodule TestSchema6 do
+      defmodule TestSchema8 do
         use Apix.Schema
 
         schema a: Any.t() do
@@ -178,15 +238,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema6,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema8,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema6.__apix_schemas__()
+             ] = TestSchema8.__apix_schemas__()
 
-      defmodule TestSchema7 do
+      defmodule TestSchema9 do
         use Apix.Schema
 
         schema a: Any.t() do
@@ -208,17 +268,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema7,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema9,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema7.__apix_schemas__()
+             ] = TestSchema9.__apix_schemas__()
     end
 
     test "expressions | `a and b` – builds `and` schema expression – the value is expected to be valid against `a` and `b` schema expressions" do
-      defmodule TestSchema8 do
+      defmodule TestSchema10 do
         use Apix.Schema
 
         # credo:disable-for-next-line
@@ -261,15 +321,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema8,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema10,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema8.__apix_schemas__()
+             ] = TestSchema10.__apix_schemas__()
 
-      defmodule TestSchema9 do
+      defmodule TestSchema11 do
         use Apix.Schema
 
         # credo:disable-for-next-line
@@ -335,17 +395,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema9,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema11,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema9.__apix_schemas__()
+             ] = TestSchema11.__apix_schemas__()
     end
 
     test "expressions | `a or b` – builds `or` schema expression – the value is expected to be valid against `a` or `b` schema expressions" do
-      defmodule TestSchema10 do
+      defmodule TestSchema12 do
         use Apix.Schema
 
         # credo:disable-for-next-line
@@ -388,15 +448,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema10,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema12,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema10.__apix_schemas__()
+             ] = TestSchema12.__apix_schemas__()
 
-      defmodule TestSchema11 do
+      defmodule TestSchema13 do
         use Apix.Schema
 
         # credo:disable-for-next-line
@@ -462,17 +522,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema11,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema13,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema11.__apix_schemas__()
+             ] = TestSchema13.__apix_schemas__()
     end
 
     test "expressions | `not a` – builds `not` schema expression – the value is expected to be invalid against `a` schema expression" do
-      defmodule TestSchema12 do
+      defmodule TestSchema14 do
         use Apix.Schema
 
         schema a: not Any.t()
@@ -503,17 +563,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema12,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema14,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema12.__apix_schemas__()
+             ] = TestSchema14.__apix_schemas__()
     end
 
     test "expressions | module attribute expansion as const – the value is expected to be equal to" do
-      defmodule TestSchema13 do
+      defmodule TestSchema15 do
         use Apix.Schema
 
         @attribute 1
@@ -534,17 +594,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema13,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema15,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema13.__apix_schemas__()
+             ] = TestSchema15.__apix_schemas__()
     end
 
     test "expressions | literal expansion as const – the value is expected to be equal to" do
-      defmodule TestSchema14 do
+      defmodule TestSchema16 do
         use Apix.Schema
 
         schema a: 1
@@ -563,17 +623,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema14,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema16,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema14.__apix_schemas__()
+             ] = TestSchema16.__apix_schemas__()
     end
 
     test "expressions | remote (defined in other module) schema referencing" do
-      defmodule TestSchema15 do
+      defmodule TestSchema17 do
         use Apix.Schema
 
         schema a: X.t(Any.t())
@@ -604,17 +664,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema15,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema17,
                  schema: :a,
                  params: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema15.__apix_schemas__()
+             ] = TestSchema17.__apix_schemas__()
     end
 
     test "expressions | parameter referencing" do
-      defmodule TestSchema16 do
+      defmodule TestSchema18 do
         use Apix.Schema
 
         schema a: p2(p1), params: [:p1, p2: 1]
@@ -645,13 +705,13 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: true
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema16,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema18,
                  schema: :a,
                  params: [{:p1, 0, nil}, {:p2, 1, nil}],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema16.__apix_schemas__()
+             ] = TestSchema18.__apix_schemas__()
     end
   end
 end

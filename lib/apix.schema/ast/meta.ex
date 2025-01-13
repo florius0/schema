@@ -16,6 +16,16 @@ defmodule Apix.Schema.Ast.Meta do
   - `:module` – module the AST node was defined in.
   - `:generated_by` – `#{inspect Extension}` that generated the AST node.
   """
+
+  @type opts() :: [
+          {:elixir_ast, Macro.t()}
+          | {:env, Macro.Env.t()}
+          | {:file, String.t() | nil}
+          | {:line, integer() | nil}
+          | {:module, module() | nil}
+          | {:generated_by, module() | nil}
+        ]
+
   @type t() :: %__MODULE__{
           file: String.t() | nil,
           line: integer() | nil,
@@ -33,28 +43,29 @@ defmodule Apix.Schema.Ast.Meta do
 
   If invoked on anything else, just returns the value passed.
   """
-  @spec maybe_put_in(maybe_ast, [opt]) :: maybe_ast
-        when maybe_ast: Ast.t() | any(),
-             opt: {:env, Macro.Env.t()} | {:elixir_ast, Macro.t()}
+  @spec maybe_put_in(maybe_ast, opts()) :: maybe_ast when maybe_ast: Ast.t() | any()
   def maybe_put_in(ast, opts \\ [])
 
   def maybe_put_in(%Ast{} = ast, opts), do: put_in_meta_field(ast, opts)
   def maybe_put_in(ast, _opts), do: ast
 
-  defp put_in_meta_field(struct, opts) do
+  @doc """
+  Builds new `t:#{inspect __MODULE__}.t/0` from `t:opts/0`
+  """
+  @spec new(opts()) :: t()
+  def new(opts) do
     {env, opts} = Keyword.pop(opts, :env)
     {elixir_ast, opts} = Keyword.pop(opts, :elixir_ast)
 
-    meta =
-      %__MODULE__{
-        file: get_file(env),
-        module: get_module(env),
-        line: get_line(elixir_ast, env)
-      }
-      |> struct(opts)
-
-    struct(struct, meta: meta)
+    %__MODULE__{
+      file: get_file(env),
+      module: get_module(env),
+      line: get_line(elixir_ast, env)
+    }
+    |> struct(opts)
   end
+
+  defp put_in_meta_field(struct, opts), do: struct(struct, meta: new(opts))
 
   defp get_file(%{file: file}), do: file
   defp get_file(_env), do: nil

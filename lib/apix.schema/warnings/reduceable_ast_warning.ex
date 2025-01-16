@@ -1,7 +1,19 @@
-# credo:disable-for-next-line
 defmodule Apix.Schema.Warnings.ReduceableAstWarning do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
+
+  @moduledoc """
+  `#{inspect __MODULE__}` is raised when `%#{inspect Ast}{}` can be reduced further, e.g.:
+
+  ```elixir
+  defmodule RecursiveSchema do
+    use Apix.Schema
+
+    # Can be written as just Ant.t()
+    schema a: Integer.t() or Any.t()
+  end
+  ```
+  """
 
   @type t() :: %__MODULE__{
           __exception__: true,

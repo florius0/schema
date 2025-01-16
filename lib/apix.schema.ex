@@ -62,7 +62,10 @@ defmodule Apix.Schema do
 
       params = Keyword.merge(block, params)
 
-      context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], params[:do], __ENV__)
+      context =
+        context
+        |> Context.schema_definition_expression!(schema_name, type_ast, params[:params], params[:do], __ENV__)
+        |> Context.validate_ast!()
 
       Module.put_attribute(__ENV__.module, :apix_schemas, context)
     end

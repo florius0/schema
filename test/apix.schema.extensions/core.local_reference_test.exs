@@ -37,6 +37,7 @@ defmodule Apix.Schema.Extensions.Core.LocalReferenceTest do
                  module: Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }

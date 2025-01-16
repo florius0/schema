@@ -3,6 +3,7 @@ defmodule Apix.Schema.Context do
   alias Apix.Schema.Ast
   alias Apix.Schema.Error
   alias Apix.Schema.Extension
+  alias Apix.Schema.Warning
 
   @moduledoc """
   The Context of all `#{inspect Schema}` operations.
@@ -20,6 +21,7 @@ defmodule Apix.Schema.Context do
   - `module` – module in which current schema is defined.
   - `schema` - name of the schema in the module.
   - `params` – parameters the schema takes in, in a form of `[parameter_name: parameter arity]`.
+  - `warnings` – warnings the current operation resulted in.
   - `errors` – errors the current operation resulted in.
   - `flags` – flags for the current schema/operation.
   - `extensions` – extensions the schema was defined with.
@@ -30,6 +32,7 @@ defmodule Apix.Schema.Context do
           module: module(),
           schema: Schema.schema(),
           params: params(),
+          warnings: [Warning.t()],
           errors: [Error.t()],
           flags: keyword(),
           extensions: [Extension.t()]
@@ -63,6 +66,7 @@ defmodule Apix.Schema.Context do
             module: nil,
             schema: nil,
             params: [],
+            warnings: [],
             errors: [],
             flags: [],
             extensions: []

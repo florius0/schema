@@ -28,6 +28,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema1,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -58,6 +59,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema2,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -88,6 +90,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema3,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -119,6 +122,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema4,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -149,6 +153,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema5,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -180,6 +185,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema6,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -210,6 +216,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema7,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -241,6 +248,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema8,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -271,6 +279,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema9,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -324,6 +333,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema10,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -398,6 +408,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema11,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -451,6 +462,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema12,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -525,6 +537,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema13,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -566,6 +579,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema14,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -597,6 +611,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema15,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -626,6 +641,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema16,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -667,6 +683,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema17,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -708,6 +725,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  module: Apix.Schema.Extensions.CoreTest.TestSchema18,
                  schema: :a,
                  params: [{:p1, 0, nil}, {:p2, 1, nil}],
+                 warnings: [],
                  errors: [],
                  flags: []
                }

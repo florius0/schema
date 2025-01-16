@@ -77,6 +77,7 @@ defmodule Apix.SchemaTest do
                      }
                    }
                  ],
+                 warnings: [],
                  errors: [],
                  flags: [],
                  extensions: [
@@ -103,7 +104,7 @@ defmodule Apix.SchemaTest do
                  ast: %Apix.Schema.Ast{
                    meta: %Apix.Schema.Ast.Meta{
                      file: ^file,
-                     line: 95,
+                     line: 96,
                      module: Apix.SchemaTest.TestSchema4,
                      generated_by: %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core}
                    }
@@ -111,6 +112,7 @@ defmodule Apix.SchemaTest do
                  module: Apix.SchemaTest.TestSchema4,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }

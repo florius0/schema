@@ -26,6 +26,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema1,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -56,6 +57,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema2,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -86,6 +88,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema3,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -116,6 +119,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema4,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -146,6 +150,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema5,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -176,6 +181,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema6,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -206,6 +212,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema7,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -236,6 +243,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema8,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -266,6 +274,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema9,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -296,6 +305,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema10,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -326,6 +336,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema11,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -356,6 +367,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema12,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -386,6 +398,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema13,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -416,6 +429,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema14,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -446,6 +460,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema15,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -476,6 +491,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema16,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -506,6 +522,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema17,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -536,6 +553,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema18,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -566,6 +584,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema19,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -596,6 +615,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema20,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -686,6 +706,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema22,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -776,6 +797,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema23,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }
@@ -992,6 +1014,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema24,
                  schema: :a,
                  params: [],
+                 warnings: [],
                  errors: [],
                  flags: []
                }

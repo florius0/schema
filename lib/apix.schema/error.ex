@@ -1,7 +1,16 @@
 defmodule Apix.Schema.Error do
   @moduledoc """
-  TODO: Error handling.
+  Error type and common functions
   """
 
-  @type t() :: any()
+  @typedoc """
+  Error.
+
+  Every Error must implement `#{inspect Exception}` behaviour.
+  """
+  @type t() :: %{
+          __struct__: module(),
+          __exception__: true,
+          message: String.t()
+        }
 end

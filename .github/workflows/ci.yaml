@@ -63,7 +63,7 @@ jobs:
           mix check
 
       - name: Upload compiler SARIF
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -71,7 +71,7 @@ jobs:
           category: compiler
 
       - name: Upload credo SARIF
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -79,25 +79,25 @@ jobs:
           category: credo
 
       - name: Upload sobelow SARIF
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: reports/credo/sarif.json
+          sarif_file: reports/sobleow/sarif.json
           category: sobelow
 
       - name: Produce GH Annotations from reports
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         continue-on-error: true
         run: .check/report/annotations.sh
       
       - name: Output GH Summary from reports
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         continue-on-error: true
         run: .check/report/summary.sh > $GITHUB_STEP_SUMMARY
 
       - name: Store reports artifact
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
@@ -113,11 +113,11 @@ jobs:
           path: reports/ex_unit/coverage.txt
 
       - name: Fix permissions
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         run: test -d ~/.werf/shared_context && sudo chown -R $(id -u):$(id -g) ~/.werf/shared_context || true 
 
       - name: Save cache
-        if: always()  && github.event.workflow_run.conclusion != 'cancelled'
+        if: always() && github.event.workflow_run.conclusion != 'cancelled'
         uses: actions/cache/save@v4
         with:
           path: |

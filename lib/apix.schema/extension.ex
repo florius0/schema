@@ -148,8 +148,13 @@ defmodule Apix.Schema.Extension do
   ]
   ```
   """
+  @spec extensions_config() :: Keyword.t()
   def extensions_config, do: Application.get_env(:apix_schema, __MODULE__, [])
 
+  @doc """
+  Builds documentation section on delegates for extensions.
+  """
+  @spec delegates_doc(t()) :: String.t()
   def delegates_doc(%__MODULE__{delegates: []}) do
     """
     ## Delegates

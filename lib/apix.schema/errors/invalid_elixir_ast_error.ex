@@ -1,6 +1,10 @@
 defmodule Apix.Schema.Errors.InvalidElixirAstError do
   alias Apix.Schema.Ast.Meta
 
+  @moduledoc """
+  `#{inspect __MODULE__}` is raised when parsing/transforming of Elixir AST fails.
+  """
+
   @type t() :: %__MODULE__{
           __exception__: true,
           message: String.t(),

@@ -3,7 +3,7 @@ defmodule Apix.Schema.Warnings.ReduceableAstWarning do
   alias Apix.Schema.Ast.Meta
 
   @moduledoc """
-  `#{inspect __MODULE__}` is raised when `%#{inspect Ast}{}` can be reduced further, e.g.:
+  `#{inspect __MODULE__}` is raised when `t:#{inspect Ast}.t/0` can be reduced further, e.g.:
 
   ```elixir
   defmodule RecursiveSchema do

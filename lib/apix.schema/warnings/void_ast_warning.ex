@@ -2,6 +2,22 @@ defmodule Apix.Schema.Warnings.VoidAstWarning do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
 
+  @moduledoc """
+  `#{inspect __MODULE__}` is raised when `t:#{inspect Ast}.t/0` evaluates to `None.t()` (excluding plain `None.t()` definition), e.g.:
+
+  ```elixir
+  defmodule RecursiveSchema do
+    use Apix.Schema
+
+    # Will raise, since no value can be both integer and string at same time
+    schema a: Integer.t() and String.t()
+
+    # Won't raise
+    schema b: None.t()
+  end
+  ```
+  """
+
   defexception [:message, :ast, :meta]
 
   @type t() :: %__MODULE__{

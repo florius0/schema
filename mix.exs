@@ -45,7 +45,8 @@ defmodule Apix.Schema.MixProject do
           Apix.Schema.Context,
           Apix.Schema.Error,
           Apix.Schema.Extension,
-          Apix.Schema.Validator
+          Apix.Schema.Validator,
+          Apix.Schema.Warning
         ],
         Extensions: [
           Apix.Schema.Extensions.Core,

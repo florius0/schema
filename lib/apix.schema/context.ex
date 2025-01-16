@@ -113,8 +113,15 @@ defmodule Apix.Schema.Context do
 
   See `#{inspect Extension}.validate_ast!/2` and `c:#{inspect Extension}.validate_ast!/1`.
   """
-  @spec validate_ast!(t()) :: :ok
-  def validate_ast!(%__MODULE__{} = context), do: Enum.each(context.extensions, &Extension.validate_ast!(&1, context))
+  @spec validate_ast!(t()) :: t() | no_return()
+  def validate_ast!(%__MODULE__{} = context) do
+    context = Enum.reduce(context.extensions, context, &Extension.validate_ast!(&1, &2))
+
+    Enum.each(context.errors, &raise/1)
+    Enum.each(context.warnings, &Warning.print/1)
+
+    context
+  end
 
   @dialyzer {:no_return, expression!: 4}
 

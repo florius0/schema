@@ -110,11 +110,11 @@ defmodule Apix.Schema.Extension do
   @doc """
   Invokes `c:validate_ast!/1`
   """
-  @spec validate_ast!(t(), Context.t()) :: :ok
+  @spec validate_ast!(t(), Context.t()) :: Context.t() | no_return()
   def validate_ast!(%__MODULE__{module: m}, context) do
     if function_exported?(m, :validate_ast!, 1),
       do: m.validate_ast!(context),
-      else: :ok
+      else: context
   end
 
   @doc """

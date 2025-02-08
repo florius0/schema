@@ -1,4 +1,4 @@
-defmodule Apix.Schema.Extensions.Core.Warnings.VoidAstWarning do
+defmodule Apix.Schema.Extensions.Core.Warnings.NoneAstWarning do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
 
@@ -30,7 +30,10 @@ defmodule Apix.Schema.Extensions.Core.Warnings.VoidAstWarning do
   @impl true
   def exception(%Ast{} = ast) do
     %__MODULE__{
-      message: "#{inspect ast} results in `#{inspect Void}.t()`",
+      message: """
+      #{inspect ast} results in `#{inspect None}.t()`.
+      If you intended it rewrite in as `#{inspect None}.t()`
+      """,
       ast: ast,
       meta: ast.meta
     }

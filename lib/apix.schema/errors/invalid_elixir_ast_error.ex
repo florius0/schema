@@ -16,7 +16,9 @@ defmodule Apix.Schema.Errors.InvalidElixirAstError do
   @impl true
   def exception(elixir_ast: elixir_ast, env: env) do
     %__MODULE__{
-      message: "invalid #{Macro.to_string(elixir_ast)} in #{Meta.new(elixir_ast: elixir_ast, env: env)}",
+      message: """
+      invalid #{Macro.to_string(elixir_ast)} in #{Meta.new(elixir_ast: elixir_ast, env: env)}
+      """,
       elixir_ast: elixir_ast
     }
   end

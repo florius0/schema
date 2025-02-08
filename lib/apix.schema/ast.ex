@@ -49,4 +49,70 @@ defmodule Apix.Schema.Ast do
             flags: [],
             meta: nil,
             parameter?: false
+
+  @doc """
+  Similar to `Macro.prewalk/2`
+  """
+  @spec prewalk(t(), (t() -> t())) :: t()
+  def prewalk(%__MODULE__{} = ast, fun) when is_function(fun, 1) do
+    ast
+    |> prewalk(nil, fn ast, _acc -> {fun.(ast), nil} end)
+    |> elem(0)
+  end
+
+  @doc """
+  Similar to `Macro.prewalk/3`
+  """
+  @spec prewalk(t(), any(), (t(), any() -> {t(), any()})) :: {t(), any()}
+  def prewalk(%__MODULE__{} = ast, acc, fun) when is_function(fun, 2) do
+    traverse(ast, acc, fun, fn x, a -> {x, a} end)
+  end
+
+  @doc """
+  Similar to `Macro.postwalk/2`
+  """
+  @spec postwalk(t(), (t() -> t())) :: t()
+  def postwalk(%__MODULE__{} = ast, fun) when is_function(fun, 1) do
+    ast
+    |> postwalk(nil, fn ast, _acc -> {fun.(ast), nil} end)
+    |> elem(0)
+  end
+
+  @doc """
+  Similar to `Macro.postwalk/3`
+  """
+  @spec postwalk(t(), any(), (t(), any() -> {t(), any()})) :: {t(), any()}
+  def postwalk(%__MODULE__{} = ast, acc, fun) when is_function(fun, 2) do
+    traverse(ast, acc, fn x, a -> {x, a} end, fun)
+  end
+
+  @doc """
+  Similar to `Macro.traverse/4`
+  """
+  @spec traverse(t(), any(), (t(), any() -> {t(), any()}), (t(), any() -> {t(), any()})) :: {t(), any()}
+  def traverse(%__MODULE__{} = ast, acc, pre, post) when is_function(pre, 2) and is_function(post, 2) do
+    {ast, acc} = pre.(ast, acc)
+
+    {args, acc} =
+      ast.args
+      |> Enum.reverse()
+      |> Enum.reduce({[], acc}, fn
+        %__MODULE__{} = arg, {args, acc} ->
+          {arg, acc} = traverse(arg, acc, pre, post)
+
+          {[arg | args], acc}
+
+        {key, %__MODULE__{} = arg}, {args, acc} ->
+          {arg, acc} = traverse(arg, acc, pre, post)
+
+          {[{key, arg} | args], acc}
+
+        arg, {args, acc} ->
+          {[arg | args], acc}
+      end)
+
+    ast = struct(ast, args: args)
+
+    post.(ast, acc)
+  end
 end

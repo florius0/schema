@@ -1,4 +1,4 @@
-defmodule Apix.Schema.Errors.BottomAstError do
+defmodule Apix.Schema.Extensions.Core.Errors.BottomAstError do
   alias Apix.Schema.Ast
 
   @moduledoc """

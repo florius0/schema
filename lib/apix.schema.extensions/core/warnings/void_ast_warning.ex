@@ -1,4 +1,4 @@
-defmodule Apix.Schema.Warnings.VoidAstWarning do
+defmodule Apix.Schema.Extensions.Core.Warnings.VoidAstWarning do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
 

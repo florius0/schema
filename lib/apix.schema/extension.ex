@@ -71,7 +71,7 @@ defmodule Apix.Schema.Extension do
   @doc """
   Optional callback to validate resulting AST
   """
-  @callback validate_ast!(Context.t()) :: :ok
+  @callback validate_ast!(Context.t()) :: Context.t()
 
   @doc """
   Optional callback to transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0`.

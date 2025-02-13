@@ -71,12 +71,6 @@ defmodule Apix.Schema do
     end
   end
 
-  defmacro cast(_data, _schema) do
-  end
-
-  defmacro validate(_data, _schema) do
-  end
-
   defmacro __before_compile__(env) do
     env.module
     |> Module.get_attribute(:apix_schemas, [])
@@ -84,5 +78,25 @@ defmodule Apix.Schema do
     quote do
       def __apix_schemas__, do: @apix_schemas
     end
+  end
+
+  @doc """
+  Returns schemas defined in the module
+  """
+  @spec schemas(module()) :: [Context.t()]
+  def schemas(module) do
+    if function_exported?(module, :__apix_schemas__, 0),
+      do: module.__apix_schemas__(),
+      else: []
+  end
+
+  @doc """
+  Returns true if `module` defines `schema` with `arity`, false otherwise.
+  """
+  @spec defines_schema?(module(), schema(), arity()) :: boolean()
+  def defines_schema?(module, schema, arity) do
+    module
+    |> schemas()
+    |> Enum.any?(&match?(%Context{module: ^module, schema: ^schema, params: p} when length(p) == arity, &1))
   end
 end

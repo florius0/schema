@@ -6,7 +6,6 @@ defmodule Apix.Schema.MixProject do
       app: :apix_schema,
       version: "0.1.0",
       elixir: "~> 1.15",
-      start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
       aliases: aliases()
@@ -15,6 +14,7 @@ defmodule Apix.Schema.MixProject do
 
   def application do
     [
+      mod: {Apix.Schema.Application, []},
       extra_applications: [:logger]
     ]
   end

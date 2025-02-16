@@ -8,7 +8,6 @@ defmodule Apix.Schema.Extensions.Core do
 
   alias Apix.Schema.Extensions.Core.Any
   alias Apix.Schema.Extensions.Core.None
-  alias Apix.Schema.Extensions.Core.Bottom
 
   alias Apix.Schema.Extensions.Core.And
   alias Apix.Schema.Extensions.Core.Or
@@ -28,10 +27,6 @@ defmodule Apix.Schema.Extensions.Core do
       {
         {Elixir.None, :t},
         {None, :t}
-      },
-      {
-        {Elixir.Bottom, :t},
-        {Bottom, :t}
       }
     ]
   }

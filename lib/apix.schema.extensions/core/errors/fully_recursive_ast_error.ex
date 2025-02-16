@@ -42,7 +42,7 @@ defmodule Apix.Schema.Extensions.Core.Errors.FullyRecursiveAstError do
   def exception(%Ast{} = ast) do
     %__MODULE__{
       message: """
-      #{inspect ast} is fully recursive in #{ast.meta}, e.g.:
+      #{inspect ast, pretty: true} is fully recursive in #{ast.meta}, e.g.:
 
       #{@fully_recursive}
 

@@ -27,7 +27,7 @@ defmodule Apix.Schema.Errors.InvalidAstError do
   def exception(%Ast{} = ast) do
     %__MODULE__{
       message: """
-      invalid #{inspect ast} in #{ast.meta}
+      invalid #{inspect ast, pretty: true} in #{ast.meta}
       """,
       ast: ast
     }

@@ -153,6 +153,11 @@ defmodule Apix.Schema.Extensions.Core do
   def validate_ast!(context) do
     TypeGraph.track!(context)
 
+    # Don't do compile time val
+    unless Code.can_await_module_compilation?() do
+      TypeGraph.validate!()
+    end
+
     context
   end
 end

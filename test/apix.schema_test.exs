@@ -1,5 +1,5 @@
 defmodule Apix.SchemaTest do
-  use ExUnit.Case, async: true
+  use Apix.Schema.Case
 
   describe "#{inspect Apix.Schema}" do
     test "__using__/1 | allows for inline extension passing" do

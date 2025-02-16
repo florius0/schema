@@ -1,5 +1,5 @@
 defmodule Apix.Schema.Extensions.CoreTest do
-  use ExUnit.Case, async: true
+  use Apix.Schema.Case
 
   alias Apix.Schema.Ast
 

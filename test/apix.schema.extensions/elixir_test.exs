@@ -1,5 +1,5 @@
 defmodule Apix.Schema.Extensions.ElixirTest do
-  use ExUnit.Case, async: true
+  use Apix.Schema.Case
 
   describe "#{inspect Apix.Schema.Extensions.Elixir}" do
     test "delegates | Atom.t -> Apix.Schema.Extensions.Elixir.Atom.t" do

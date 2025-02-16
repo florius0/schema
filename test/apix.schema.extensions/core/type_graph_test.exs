@@ -1,17 +1,10 @@
 defmodule Apix.Schema.Extensions.Core.TypeGraphTest do
-  use ExUnit.Case
+  use Apix.Schema.Case
 
   alias Apix.Schema.Extensions.Core.TypeGraph
   alias Apix.Schema.Extensions.Core.TypeGraph.Graph
 
   describe "#{inspect Apix.Schema.Extensions.Core.TypeGraph}" do
-    setup do
-      Graph.vertices()
-      |> Graph.del_vertices()
-
-      :ok
-    end
-
     test "track/1 | tracks schema definitions" do
       defmodule TestSchema1 do
         use Apix.Schema

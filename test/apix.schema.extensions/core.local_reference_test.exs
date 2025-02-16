@@ -1,5 +1,5 @@
 defmodule Apix.Schema.Extensions.Core.LocalReferenceTest do
-  use ExUnit.Case, async: true
+  use Apix.Schema.Case
 
   describe "#{inspect Apix.Schema.Extensions.Core.LocalReference}" do
     test "expressions | local (defied in same module) schema referencing" do

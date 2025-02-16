@@ -7,7 +7,7 @@ defimpl String.Chars, for: Apix.Schema.Ast.Meta do
 
     file =
       if meta.file,
-        do: meta.file,
+        do: Path.relative_to_cwd(meta.file),
         else: "<no file>"
 
     line =

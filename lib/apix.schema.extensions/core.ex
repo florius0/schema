@@ -46,6 +46,7 @@ defmodule Apix.Schema.Extensions.Core do
   - `not a` – builds `not` schema expression – the value is expected to be invalid against `a` schema expression
   - module attribute expansion as const – the value is expected to be equal to.
   - literal expansion as const – the value is expected to be equal to.
+  - `_` – empty expression.
   - remote (defined in other module) schema referencing.
   - parameter referencing.
 
@@ -124,6 +125,10 @@ defmodule Apix.Schema.Extensions.Core do
       schema: schema,
       args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
     )
+  end
+
+  def expression!(_context, {:_, _, _}, schema_ast, _env, _literal?) do
+    schema_ast
   end
 
   def expression!(context, {name, _, args}, schema_ast, env, false) do

@@ -31,11 +31,13 @@ defmodule Apix.Schema.Extensions.Core.Errors.UndefinedReferenceAstError do
   def exception(%Ast{} = ast) do
     %__MODULE__{
       message: """
-      #{inspect ast} has an undefined reference, e.g.:
+      #{inspect ast} has an undefined reference in #{ast.meta}, e.g.:
 
       #{@undefined_reference}
 
       Check if schema you are referencing exists, or if there is a typo.
+
+      #{ast.meta}
       """,
       ast: ast
     }

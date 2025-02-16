@@ -30,7 +30,10 @@ defmodule Apix.Schema.Warnings.ReduceableAstWarning do
     %__MODULE__{
       message: """
       #{inspect original_ast} can be reduced to #{inspect reduced_ast} and remain equivalent.
+
       If you intended that rewrite it as #{inspect reduced_ast}.
+
+      #{original_ast.meta}
       """,
       original_ast: original_ast,
       reduced_ast: reduced_ast,

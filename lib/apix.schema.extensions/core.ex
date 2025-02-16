@@ -151,7 +151,7 @@ defmodule Apix.Schema.Extensions.Core do
 
   @impl Extension
   def validate_ast!(context) do
-    TypeGraph.track(context)
+    TypeGraph.track!(context)
 
     context
   end

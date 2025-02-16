@@ -5,7 +5,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraphTest do
   alias Apix.Schema.Extensions.Core.TypeGraph.Graph
 
   describe "#{inspect Apix.Schema.Extensions.Core.TypeGraph}" do
-    test "track/1 | tracks schema definitions" do
+    test "track!/1 | tracks schema definitions" do
       defmodule TestSchema1 do
         use Apix.Schema
 
@@ -45,7 +45,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraphTest do
       assert [] = Graph.edges() -- expected_edges
     end
 
-    test "prune/0 | keeps only actual data" do
+    test "prune!/0 | keeps only actual data" do
       defmodule TestSchema2 do
         use Apix.Schema
 
@@ -59,17 +59,26 @@ defmodule Apix.Schema.Extensions.Core.TypeGraphTest do
         end
       end
 
+      Graph.add_vertex({TestSchema2, :d, 0}, %{vsn: :deleted_module})
+
+      TypeGraph.prune!()
+
+      any = {Apix.Schema.Extensions.Core.Any, :t, 0}
+      tuple = {Apix.Schema.Extensions.Elixir.Tuple, :t, 2}
+
       a = {TestSchema2, :a, 0}
       b = {TestSchema2, :b, 0}
       c = {TestSchema2, :c, 0}
 
-      TypeGraph.prune()
-
-      expected_vertices = [a, b, c]
+      expected_vertices = [any, tuple, a, b, c]
 
       expected_edges = [
+        {any, a, :supertype},
+        {a, any, :subtype},
         {a, b, :supertype},
         {b, a, :subtype},
+        {tuple, c, :supertype},
+        {c, tuple, :subtype},
         {a, c, :referenced},
         {c, a, :references},
         {b, c, :referenced},

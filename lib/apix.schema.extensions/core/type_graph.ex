@@ -11,8 +11,8 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @doc """
   Tracks schema and it's references in the graph.
   """
-  @spec track(Context.t()) :: :ok
-  def track(%Context{} = context) do
+  @spec track!(Context.t()) :: :ok
+  def track!(%Context{} = context) do
     vertex = build_vertex(context)
     vertex_label = build_vertex_label(context)
 
@@ -39,8 +39,8 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
 
   Intended to be called after either all code is compiled or on hot reloads.
   """
-  @spec prune() :: :ok
-  def prune do
+  @spec prune!() :: :ok
+  def prune! do
     Graph.vertices()
     |> Enum.each(fn {m, s, a} = v ->
       {^v, recorded_vsn} = Graph.vertex(v)

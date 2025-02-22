@@ -81,6 +81,11 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast, examples: [arg | schema_ast.examples])
   end
 
+  # TODO: Validators
+  def expression!(_context, {:validate, _, [_elixir_ast]}, schema_ast, _env, _literal?) do
+    schema_ast
+  end
+
   def expression!(context, {:and, _, args}, schema_ast, env, false) do
     struct(schema_ast,
       module: And,

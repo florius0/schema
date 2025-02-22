@@ -10,22 +10,39 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
 
   Optionally, renders it in given formats using `dot` program.
   """
-  @spec to_dot(Path.t(), formats :: [atom()]) :: :ok
-  def to_dot(path \\ "#{inspect Graph}", formats \\ []) do
+  @spec to_dot(keyword()) :: :ok
+  def to_dot(opts) do
+    path = opts |> Keyword.get(:path, "#{inspect Graph}")
+    formats = opts |> Keyword.get(:format) |> List.wrap()
+    filter_edges = opts |> Keyword.get(:filter_edges) |> List.wrap()
+
     dot_path = "#{path}.dot"
 
     vertices =
-      Graph.postorder()
-      |> Map.new(fn {m, s, a} = v -> {v, "\"#{inspect m}.#{s}/#{a}\""} end)
+      Graph.vertices()
+      |> Map.new(fn {m, s, a} = v ->
+        t =
+          "\"#{inspect m}.#{s}/#{a}\""
+          |> String.replace(~r/Apix\.Schema\.Extensions\.[\w\d]+\./, "")
+
+        {v, t}
+      end)
 
     vertices_dot =
       vertices
-      |> Map.values()
+      |> Map.to_list()
+      |> Enum.sort_by(fn {v, _t} -> Graph.in_degree(v) end, :desc)
+      |> Enum.map(fn {_v, t} -> t end)
       |> Enum.join("\n")
 
+    edges_dot = Graph.edges()
+
     edges_dot =
-      Graph.edges()
-      |> Enum.map_join("\n", fn {f, t, l} -> "#{vertices[f]} -> #{vertices[t]} [label = #{l}]" end)
+      if filter_edges == [],
+        do: edges_dot,
+        else: Enum.filter(edges_dot, fn {_f, _t, l} -> l in filter_edges end)
+
+    edges_dot = Enum.map_join(edges_dot, "\n", fn {f, t, l} -> "#{vertices[f]} -> #{vertices[t]} [label = #{l}]" end)
 
     dot = """
     digraph "#{inspect Graph}" {

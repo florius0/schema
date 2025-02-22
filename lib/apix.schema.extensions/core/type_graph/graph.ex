@@ -158,7 +158,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
 
   # Private
 
-  defp do_dump(state, path \\ "") do
+  defp do_dump(state, path \\ Mix.Project.compile_path()) do
     with path <- Path.join(path, @filename),
          {:ok, existing} <- do_load(state),
          {:newer, true} <- {:newer, state.version >= existing.version},
@@ -181,7 +181,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
     end
   end
 
-  defp do_load(_state, path \\ "") do
+  defp do_load(_state, path \\ Mix.Project.compile_path()) do
     with path <- Path.join(path, @filename),
          :ok <- path |> Path.dirname() |> File.mkdir_p(),
          {:ok, etf} <- File.read(path),

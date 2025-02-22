@@ -81,7 +81,19 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
   Intended to be used at run time to start the GenServer under supervision.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts), do: GenServer.start(__MODULE__, [opts], name: __MODULE__)
+  def start_link(opts) do
+    __MODULE__
+    |> GenServer.start([opts], name: __MODULE__)
+    |> case do
+      {:error, {:already_started, pid}} ->
+        Process.link(pid)
+
+        {:ok, pid}
+
+      x ->
+        x
+    end
+  end
 
   # GenServer
 

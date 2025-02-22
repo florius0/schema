@@ -126,8 +126,39 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema4.__apix_schemas__()
     end
 
-    test "delegates | Tuple.t -> Apix.Schema.Extensions.Elixir.Tuple.t" do
+    test "delegates | Number.t -> Apix.Schema.Extensions.Elixir.Number.t" do
       defmodule TestSchema5 do
+        use Apix.Schema
+
+        schema a: Number.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.Number,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema4,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema4.__apix_schemas__()
+    end
+
+    test "delegates | Tuple.t -> Apix.Schema.Extensions.Elixir.Tuple.t" do
+      defmodule TestSchema6 do
         use Apix.Schema
 
         schema a: Tuple.t() do
@@ -147,18 +178,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema5,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema6,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema5.__apix_schemas__()
+             ] = TestSchema6.__apix_schemas__()
     end
 
     test "delegates | List.t -> Apix.Schema.Extensions.Elixir.List.t" do
-      defmodule TestSchema6 do
+      defmodule TestSchema7 do
         use Apix.Schema
 
         schema a: List.t() do
@@ -178,18 +209,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema6,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema7,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema6.__apix_schemas__()
+             ] = TestSchema7.__apix_schemas__()
     end
 
     test "delegates | Map.t -> Apix.Schema.Extensions.Elixir.Map.t" do
-      defmodule TestSchema7 do
+      defmodule TestSchema8 do
         use Apix.Schema
 
         schema a: Map.t() do
@@ -209,37 +240,6 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema7,
-                 schema: :a,
-                 params: [],
-                 warnings: [],
-                 errors: [],
-                 flags: []
-               }
-             ] = TestSchema7.__apix_schemas__()
-    end
-
-    test "delegates | Function.t -> Apix.Schema.Extensions.Elixir.Function.t" do
-      defmodule TestSchema8 do
-        use Apix.Schema
-
-        schema a: Function.t() do
-        end
-      end
-
-      assert [
-               %Apix.Schema.Context{
-                 ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Function,
-                   schema: :t,
-                   args: [],
-                   shortdoc: nil,
-                   doc: nil,
-                   examples: [],
-                   validators: [],
-                   flags: [],
-                   parameter?: false
-                 },
                  module: Apix.Schema.Extensions.ElixirTest.TestSchema8,
                  schema: :a,
                  params: [],
@@ -250,18 +250,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema8.__apix_schemas__()
     end
 
-    test "delegates | Module.t -> Apix.Schema.Extensions.Elixir.Module.t" do
+    test "delegates | Struct.t -> Apix.Schema.Extensions.Elixir.Struct.t" do
       defmodule TestSchema9 do
         use Apix.Schema
 
-        schema a: Module.t() do
+        schema a: Struct.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Module,
+                   module: Apix.Schema.Extensions.Elixir.Struct,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -281,18 +281,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema9.__apix_schemas__()
     end
 
-    test "delegates | PID.t -> Apix.Schema.Extensions.Elixir.PID.t" do
+    test "delegates | Record.t -> Apix.Schema.Extensions.Elixir.Record.t" do
       defmodule TestSchema10 do
         use Apix.Schema
 
-        schema a: PID.t() do
+        schema a: Record.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.PID,
+                   module: Apix.Schema.Extensions.Elixir.Record,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -312,18 +312,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema10.__apix_schemas__()
     end
 
-    test "delegates | Port.t -> Apix.Schema.Extensions.Elixir.Port.t" do
+    test "delegates | MapSet.t -> Apix.Schema.Extensions.Elixir.MapSet.t" do
       defmodule TestSchema11 do
         use Apix.Schema
 
-        schema a: Port.t() do
+        schema a: MapSet.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Port,
+                   module: Apix.Schema.Extensions.Elixir.MapSet,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -343,18 +343,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema11.__apix_schemas__()
     end
 
-    test "delegates | Reference.t -> Apix.Schema.Extensions.Elixir.Reference.t" do
+    test "delegates | Range.t -> Apix.Schema.Extensions.Elixir.Range.t" do
       defmodule TestSchema12 do
         use Apix.Schema
 
-        schema a: Reference.t() do
+        schema a: Range.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Reference,
+                   module: Apix.Schema.Extensions.Elixir.Range,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -374,18 +374,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema12.__apix_schemas__()
     end
 
-    test "delegates | Date.t -> Apix.Schema.Extensions.Elixir.Date.t" do
+    test "delegates | Function.t -> Apix.Schema.Extensions.Elixir.Function.t" do
       defmodule TestSchema13 do
         use Apix.Schema
 
-        schema a: Date.t() do
+        schema a: Function.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Date,
+                   module: Apix.Schema.Extensions.Elixir.Function,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -405,18 +405,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema13.__apix_schemas__()
     end
 
-    test "delegates | Time.t -> Apix.Schema.Extensions.Elixir.Time.t" do
+    test "delegates | Module.t -> Apix.Schema.Extensions.Elixir.Module.t" do
       defmodule TestSchema14 do
         use Apix.Schema
 
-        schema a: Time.t() do
+        schema a: Module.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Time,
+                   module: Apix.Schema.Extensions.Elixir.Module,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -436,18 +436,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema14.__apix_schemas__()
     end
 
-    test "delegates | DateTime.t -> Apix.Schema.Extensions.Elixir.DateTime.t" do
+    test "delegates | PID.t -> Apix.Schema.Extensions.Elixir.PID.t" do
       defmodule TestSchema15 do
         use Apix.Schema
 
-        schema a: DateTime.t() do
+        schema a: PID.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.DateTime,
+                   module: Apix.Schema.Extensions.Elixir.PID,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -467,18 +467,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema15.__apix_schemas__()
     end
 
-    test "delegates | NaiveDateTime.t -> Apix.Schema.Extensions.Elixir.NaiveDateTime.t" do
+    test "delegates | Port.t -> Apix.Schema.Extensions.Elixir.Port.t" do
       defmodule TestSchema16 do
         use Apix.Schema
 
-        schema a: NaiveDateTime.t() do
+        schema a: Port.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.NaiveDateTime,
+                   module: Apix.Schema.Extensions.Elixir.Port,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -498,18 +498,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema16.__apix_schemas__()
     end
 
-    test "delegates | Regex.t -> Apix.Schema.Extensions.Elixir.Regex.t" do
+    test "delegates | Reference.t -> Apix.Schema.Extensions.Elixir.Reference.t" do
       defmodule TestSchema17 do
         use Apix.Schema
 
-        schema a: Regex.t() do
+        schema a: Reference.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Regex,
+                   module: Apix.Schema.Extensions.Elixir.Reference,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -529,18 +529,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema17.__apix_schemas__()
     end
 
-    test "delegates | URI.t -> Apix.Schema.Extensions.Elixir.URI.t" do
+    test "delegates | Date.t -> Apix.Schema.Extensions.Elixir.Date.t" do
       defmodule TestSchema18 do
         use Apix.Schema
 
-        schema a: URI.t() do
+        schema a: Date.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.URI,
+                   module: Apix.Schema.Extensions.Elixir.Date,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -560,18 +560,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema18.__apix_schemas__()
     end
 
-    test "delegates | Version.t -> Apix.Schema.Extensions.Elixir.Version.t" do
+    test "delegates | Date.Range.t -> Apix.Schema.Extensions.Elixir.Date.Range.t" do
       defmodule TestSchema19 do
         use Apix.Schema
 
-        schema a: Version.t() do
+        schema a: Date.Range.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Version,
+                   module: Apix.Schema.Extensions.Elixir.Date.Range,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -591,18 +591,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema19.__apix_schemas__()
     end
 
-    test "delegates | Version.Requirement.t -> Apix.Schema.Extensions.Elixir.Version.Requirement." do
+    test "delegates | Time.t -> Apix.Schema.Extensions.Elixir.Time.t" do
       defmodule TestSchema20 do
         use Apix.Schema
 
-        schema a: Version.Requirement.t() do
+        schema a: Time.t() do
         end
       end
 
       assert [
                %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: Apix.Schema.Extensions.Elixir.Version.Requirement,
+                   module: Apix.Schema.Extensions.Elixir.Time,
                    schema: :t,
                    args: [],
                    shortdoc: nil,
@@ -622,8 +622,194 @@ defmodule Apix.Schema.Extensions.ElixirTest do
              ] = TestSchema20.__apix_schemas__()
     end
 
-    test "expressions | item" do
+    test "delegates | DateTime.t -> Apix.Schema.Extensions.Elixir.DateTime.t" do
+      defmodule TestSchema21 do
+        use Apix.Schema
+
+        schema a: DateTime.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.DateTime,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema21,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema21.__apix_schemas__()
+    end
+
+    test "delegates | NaiveDateTime.t -> Apix.Schema.Extensions.Elixir.NaiveDateTime.t" do
       defmodule TestSchema22 do
+        use Apix.Schema
+
+        schema a: NaiveDateTime.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.NaiveDateTime,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema22,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema22.__apix_schemas__()
+    end
+
+    test "delegates | Regex.t -> Apix.Schema.Extensions.Elixir.Regex.t" do
+      defmodule TestSchema23 do
+        use Apix.Schema
+
+        schema a: Regex.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.Regex,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema23,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema23.__apix_schemas__()
+    end
+
+    test "delegates | URI.t -> Apix.Schema.Extensions.Elixir.URI.t" do
+      defmodule TestSchema24 do
+        use Apix.Schema
+
+        schema a: URI.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.URI,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema24,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema24.__apix_schemas__()
+    end
+
+    test "delegates | Version.t -> Apix.Schema.Extensions.Elixir.Version.t" do
+      defmodule TestSchema25 do
+        use Apix.Schema
+
+        schema a: Version.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.Version,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema25,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema25.__apix_schemas__()
+    end
+
+    test "delegates | Version.Requirement.t -> Apix.Schema.Extensions.Elixir.Version.Requirement." do
+      defmodule TestSchema26 do
+        use Apix.Schema
+
+        schema a: Version.Requirement.t() do
+        end
+      end
+
+      assert [
+               %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: Apix.Schema.Extensions.Elixir.Version.Requirement,
+                   schema: :t,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema26,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             ] = TestSchema26.__apix_schemas__()
+    end
+
+    test "expressions | item" do
+      defmodule TestSchema27 do
         use Apix.Schema
 
         schema a: Tuple.t() do
@@ -703,18 +889,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema22,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema27,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema22.__apix_schemas__()
+             ] = TestSchema27.__apix_schemas__()
     end
 
     test "expressions | rest" do
-      defmodule TestSchema23 do
+      defmodule TestSchema28 do
         use Apix.Schema
 
         schema a: Tuple.t() do
@@ -794,18 +980,18 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema23,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema28,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema23.__apix_schemas__()
+             ] = TestSchema28.__apix_schemas__()
     end
 
     test "expressions | field" do
-      defmodule TestSchema24 do
+      defmodule TestSchema29 do
         use Apix.Schema
 
         schema a: Map.t() do
@@ -1011,14 +1197,14 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema24,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema29,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema24.__apix_schemas__()
+             ] = TestSchema29.__apix_schemas__()
     end
   end
 end

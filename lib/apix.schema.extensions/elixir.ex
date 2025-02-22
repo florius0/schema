@@ -10,9 +10,14 @@ defmodule Apix.Schema.Extensions.Elixir do
   alias Apix.Schema.Extensions.Elixir.String
   alias Apix.Schema.Extensions.Elixir.Integer
   alias Apix.Schema.Extensions.Elixir.Float
+  alias Apix.Schema.Extensions.Elixir.Number
   alias Apix.Schema.Extensions.Elixir.Tuple
   alias Apix.Schema.Extensions.Elixir.List
   alias Apix.Schema.Extensions.Elixir.Map
+  alias Apix.Schema.Extensions.Elixir.Struct
+  alias Apix.Schema.Extensions.Elixir.Record
+  alias Apix.Schema.Extensions.Elixir.MapSet
+  alias Apix.Schema.Extensions.Elixir.Range
   alias Apix.Schema.Extensions.Elixir.Function
   alias Apix.Schema.Extensions.Elixir.Module
   alias Apix.Schema.Extensions.Elixir.PID
@@ -47,6 +52,10 @@ defmodule Apix.Schema.Extensions.Elixir do
         {Float, :t}
       },
       {
+        {Elixir.Number, :t},
+        {Number, :t}
+      },
+      {
         {Elixir.Tuple, :t},
         {Tuple, :t}
       },
@@ -57,6 +66,22 @@ defmodule Apix.Schema.Extensions.Elixir do
       {
         {Elixir.Map, :t},
         {Map, :t}
+      },
+      {
+        {Elixir.Struct, :t},
+        {Struct, :t}
+      },
+      {
+        {Elixir.Record, :t},
+        {Record, :t}
+      },
+      {
+        {Elixir.MapSet, :t},
+        {MapSet, :t}
+      },
+      {
+        {Elixir.Range, :t},
+        {Range, :t}
       },
       {
         {Elixir.Function, :t},
@@ -81,6 +106,10 @@ defmodule Apix.Schema.Extensions.Elixir do
       {
         {Elixir.Date, :t},
         {Date, :t}
+      },
+      {
+        {Elixir.Date.Range, :t},
+        {Date.Range, :t}
       },
       {
         {Elixir.Time, :t},

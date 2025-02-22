@@ -50,7 +50,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
       new = build_vertex_label(recorded, module: m)
 
       # Delete vertex if module is deleted
-      if (recorded.vsn == nil and new.vsn != nil) or recorded.vsn == new.vsn do
+      if (recorded[:vsn] == nil and new[:vsn] != nil) or recorded[:vsn] == new[:vsn] do
         Graph.add_vertex(v, new)
       else
         Graph.del_vertex(v)

@@ -21,17 +21,21 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
 
     Graph.add_vertex(vertex, vertex_label)
 
-    Ast.prewalk(context.ast, fn ast ->
-      ast_vertex = build_vertex(ast)
-      ast_vertex_label = build_vertex_label(module: ast.module, ast: ast)
+    Ast.prewalk(context.ast, fn
+      %Ast{module: nil} = ast ->
+        ast
 
-      {edge_label_1, edge_label_2} = build_edge_label(context, ast)
+      ast ->
+        ast_vertex = build_vertex(ast)
+        ast_vertex_label = build_vertex_label(module: ast.module, ast: ast)
 
-      Graph.add_vertex(ast_vertex, ast_vertex_label)
-      Graph.add_edge({ast_vertex, vertex, edge_label_1}, ast_vertex, vertex, edge_label_1)
-      Graph.add_edge({vertex, ast_vertex, edge_label_2}, vertex, ast_vertex, edge_label_2)
+        {edge_label_1, edge_label_2} = build_edge_label(context, ast)
 
-      ast
+        Graph.add_vertex(ast_vertex, ast_vertex_label)
+        Graph.add_edge({ast_vertex, vertex, edge_label_1}, ast_vertex, vertex, edge_label_1)
+        Graph.add_edge({vertex, ast_vertex, edge_label_2}, vertex, ast_vertex, edge_label_2)
+
+        ast
     end)
 
     :ok

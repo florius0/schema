@@ -165,7 +165,8 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
          data <-
            state
            |> Map.from_struct()
-           |> Map.put(:sofs, :sofs.digraph_to_family(state.digraph))
+           |> Map.put(:vertices, state.digraph |> :digraph.vertices() |> Enum.map(fn v -> :digraph.vertex(state.digraph, v) end))
+           |> Map.put(:edges, state.digraph |> :digraph.edges() |> Enum.map(fn e -> :digraph.edge(state.digraph, e) end))
            |> Map.delete(:digraph)
            |> :erlang.term_to_binary(),
          :ok <- path |> Path.dirname() |> File.mkdir_p(),
@@ -186,11 +187,13 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
          :ok <- path |> Path.dirname() |> File.mkdir_p(),
          {:ok, etf} <- File.read(path),
          %{format: @format} = loaded <- :erlang.binary_to_term(etf),
+         digraph <- :digraph.new(),
          loaded <-
            loaded
            |> Map.update!(:format, fn format -> @format = format end)
-           |> Map.put(:digraph, :sofs.family_to_digraph(loaded.sofs))
-           |> Map.delete(:sofs),
+           |> Map.update!(:vertices, fn v -> Enum.each(v, fn {v, label} -> :digraph.add_vertex(digraph, v, label) end) end)
+           |> Map.update!(:edges, fn e -> Enum.each(e, fn {e, from, to, label} -> :digraph.add_edge(digraph, e, from, to, label) end) end)
+           |> Map.put(:digraph, digraph),
          state <- struct(__MODULE__, loaded) do
       {:ok, state}
     else

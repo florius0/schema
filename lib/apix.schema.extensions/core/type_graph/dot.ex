@@ -11,7 +11,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
   Optionally, renders it in given formats using `dot` program.
   """
   @spec to_dot(keyword()) :: :ok
-  def to_dot(opts) do
+  def to_dot(opts \\ []) do
     path = opts |> Keyword.get(:path, "#{inspect Graph}")
     formats = opts |> Keyword.get(:format) |> List.wrap()
     filter_edges = opts |> Keyword.get(:filter_edges) |> List.wrap()

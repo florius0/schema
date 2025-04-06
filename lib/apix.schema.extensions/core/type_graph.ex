@@ -2,6 +2,10 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
+  alias Apix.Schema.Extensions.Core.And
+  alias Apix.Schema.Extensions.Core.Or
+  alias Apix.Schema.Extensions.Core.Not
+
   alias Apix.Schema.Extensions.Core.TypeGraph.Graph
 
   alias Apix.Schema.Extensions.Core.Errors.FullyRecursiveAstError
@@ -12,12 +16,31 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   """
 
   @doc """
+  Runs all the `#{inspect __MODULE__}` functions that are intended to be run
+  after compilation if compilation is finished to avoid corrupting `#{inspect __MODULE__}` state:application
+
+  - `prune!/0`
+  - `validate!/0`
+  - `build_type_relations!/0`
+  """
+  @spec on_compilation!() :: :ok | no_return()
+  def on_compilation! do
+    unless Code.can_await_module_compilation?() do
+      prune!()
+      validate!()
+      build_type_relations!()
+    end
+
+    :ok
+  end
+
+  @doc """
   Tracks schema and it's references in the graph.
   """
   @spec track!(Context.t()) :: :ok
   def track!(%Context{} = context) do
     vertex = build_vertex(context)
-    vertex_label = build_vertex_label(module: context.module, ast: context.ast)
+    vertex_label = build_vertex_label(context)
 
     Graph.add_vertex(vertex, vertex_label)
 
@@ -26,14 +49,14 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
         ast
 
       ast ->
+        # Referenced module can be undefined
+        # || {m, s, length(a)}
         ast_vertex = build_vertex(ast)
-        ast_vertex_label = build_vertex_label(module: ast.module, ast: ast)
-
-        {edge_label_1, edge_label_2} = build_edge_label(context, ast)
+        ast_vertex_label = build_vertex_label(ast)
 
         Graph.add_vertex(ast_vertex, ast_vertex_label)
-        Graph.add_edge({ast_vertex, vertex, edge_label_1}, ast_vertex, vertex, edge_label_1)
-        Graph.add_edge({vertex, ast_vertex, edge_label_2}, vertex, ast_vertex, edge_label_2)
+        Graph.add_edge({vertex, ast_vertex, :references}, vertex, ast_vertex, :references)
+        Graph.add_edge({ast_vertex, vertex, :referenced}, ast_vertex, vertex, :referenced)
 
         ast
     end)
@@ -49,17 +72,45 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @spec prune!() :: :ok
   def prune! do
     Graph.vertices()
-    |> Enum.each(fn {m, _s, _a} = v ->
-      {^v, recorded} = Graph.vertex(v)
-      new = build_vertex_label(recorded, module: m)
+    |> Enum.map(fn msa ->
+      {^msa, context} = Graph.vertex(msa)
+      new_context = build_vertex_label(context)
 
-      # Delete vertex if module is deleted
-      if (recorded[:vsn] == nil and new[:vsn] != nil) or recorded[:vsn] == new[:vsn] do
-        Graph.add_vertex(v, new)
-      else
-        Graph.del_vertex(v)
-      end
+      {context, new_context}
     end)
+    |> Enum.each(fn
+      # "virtual" context, will handle orphans later
+      {%Context{module: nil}, nil} ->
+        :ok
+
+      # Context unchanged, do nothing
+      {%Context{} = context, %Context{} = context} ->
+        :ok
+
+      # Context deleted, delete it
+      {%Context{} = context1, nil} ->
+        Graph.del_vertex(context1)
+
+      # Context changed, re-track it
+      {%Context{} = context1, %Context{} = context2} ->
+        Graph.del_vertex(context1) |> dbg()
+        track!(context2)
+    end)
+
+    # Delete orphaned "virtual" contexts
+    # Do it as separate second pass since re-tracking may produce new edges
+    Graph.vertices()
+    |> Enum.filter(fn msa ->
+      {^msa, context} = Graph.vertex(msa)
+
+      virtual? =
+        if context,
+          do: !!context.flags[:virtual?],
+          else: true
+
+      virtual? and Graph.in_degree(msa) + Graph.out_degree(msa) == 0
+    end)
+    |> Graph.del_vertices()
   end
 
   @doc """
@@ -72,38 +123,36 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @spec validate!() :: :ok | no_return()
   def validate! do
     Graph.vertices()
-    |> Enum.each(fn {m, s, a} = v ->
-      unless Apix.Schema.defines_schema?(m, s, a) do
-        {^v, label} = Graph.vertex(v)
-        raise UndefinedReferenceAstError, label.ast
+    |> Enum.each(fn {m, s, a} = msa ->
+      unless Apix.Schema.get_schema(m, s, a) do
+        {^msa, context} = Graph.vertex(msa)
+        raise UndefinedReferenceAstError, context.ast
       end
     end)
   end
 
+  @spec build_type_relations!() :: :ok | no_return()
+  def build_type_relations! do
+    Graph.vertices()
+    |> Enum.each(fn msa ->
+      {^msa, context} = Graph.vertex(msa)
+      build_type_relations!(msa, context)
+    end)
+  end
+
+  defp build_type_relations!(_msa, %Context{} = context) do
+    context.ast
+    |> Ast.prewalk(fn ast ->
+      # TODO
+      ast
+    end)
+  end
+
   defp build_vertex(%Ast{module: m, schema: s, args: a}), do: {m, s, length(a)}
+  defp build_vertex(%Ast{module: nil, schema: s, args: a} = ast), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(ast)}", s, length(a)}
   defp build_vertex(%Context{module: m, schema: s, params: p}), do: {m, s, length(p)}
+  defp build_vertex(%Context{module: nil, schema: s, params: p} = context), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(context)}", s, length(p)}
 
-  defp build_vertex_label(label \\ %{}, opts) do
-    label =
-      if opts[:module],
-        do: Map.put(label, :vsn, maybe_module_vsn(opts[:module])),
-        else: label
-
-    label =
-      if opts[:ast],
-        do: Map.put(label, :ast, opts[:ast]),
-        else: label
-
-    label
-  end
-
-  defp build_edge_label(%{ast: ast} = _context, ast), do: {:supertype, :subtype}
-  defp build_edge_label(_context, _ast), do: {:referenced, :references}
-
-  # Support erlang modules
-  defp maybe_module_vsn(module) do
-    if function_exported?(module, :module_info, 1),
-      do: :attributes |> module.module_info() |> Keyword.get(:vsn),
-      else: nil
-  end
+  defp build_vertex_label(%Ast{module: m, schema: s, args: a}), do: Apix.Schema.get_schema(m, s, length(a))
+  defp build_vertex_label(%Context{module: m, schema: s, params: p}), do: Apix.Schema.get_schema(m, s, length(p))
 end

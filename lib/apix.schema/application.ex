@@ -8,8 +8,7 @@ defmodule Apix.Schema.Application do
   def start(_type, _args) do
     [
       Apix.Schema.Extensions.Core.TypeGraph.Graph,
-      Apix.Schema.Extensions.Core.TypeGraph.Pruner,
-      Apix.Schema.Extensions.Core.TypeGraph.Validator
+      Apix.Schema.Extensions.Core.TypeGraph.OnCompilation
     ]
     |> Supervisor.start_link(strategy: :one_for_one, name: Empay.Supervisor)
   end

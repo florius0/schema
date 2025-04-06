@@ -182,7 +182,7 @@ end
 
    - [x] expressions (`Apix.Schema.Core`)
    - [x] elixir types (`Apix.Schema.Elixir`)
-   - [ ] mix check & refactoring
+   - [x] mix check & refactoring
    - [ ] type casting
    - [ ] imports/exports extension architecture
    - [ ] building functions in compile time relying on pattern-matching

@@ -13,10 +13,15 @@ defmodule Apix.Schema do
   """
   @type schema() :: atom()
 
+  @typedoc """
+  MFA but for Schemas
+  """
+  @type msa() :: {module(), schema(), arity()}
+
   @doc """
   Callback to return all schemas defined in the module
   """
-  @callback __apix_schemas__() :: [Context.t()]
+  @callback __apix_schemas__() :: %{msa() => Context.t()}
 
   @doc """
   Sets default context and imports `schema/2` macro
@@ -43,9 +48,11 @@ defmodule Apix.Schema do
       unquote(Context.require(context))
 
       @before_compile unquote(__MODULE__)
+      @after_compile unquote(__MODULE__)
     end
   end
 
+  @spec schema(any()) :: {:__block__, [], [{:=, [], [...]} | {:__block__, [...], [...]}, ...]}
   defmacro schema(params, block \\ [do: {:__block__, [], []}]) do
     quote location: :keep,
           generated: true,
@@ -62,10 +69,7 @@ defmodule Apix.Schema do
 
       params = Keyword.merge(block, params)
 
-      context =
-        context
-        |> Context.schema_definition_expression!(schema_name, type_ast, params[:params], params[:do], __ENV__)
-        |> Context.validate_ast!()
+      context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], params[:do], __ENV__)
 
       Module.put_attribute(__ENV__.module, :apix_schemas, context)
     end
@@ -76,27 +80,27 @@ defmodule Apix.Schema do
     |> Module.get_attribute(:apix_schemas, [])
 
     quote do
-      def __apix_schemas__, do: @apix_schemas
+      def __apix_schemas__, do: Map.new(@apix_schemas, &{{&1.module, &1.schema, length(&1.params)}, &1})
     end
   end
 
+  def __after_compile__(env, _bytecode), do: Enum.each(env.module.__apix_schemas__(), fn {_msa, context} -> Context.validate_ast!(context) end)
+
   @doc """
-  Returns schemas defined in the module
+  Returns schemas defined in the `module`
   """
-  @spec schemas(module()) :: [Context.t()]
-  def schemas(module) do
+  @spec get_schemas(module()) :: %{msa() => Context.t()}
+  def get_schemas(module) do
+    Code.ensure_loaded(module)
+
     if function_exported?(module, :__apix_schemas__, 0),
       do: module.__apix_schemas__(),
-      else: []
+      else: %{}
   end
 
   @doc """
-  Returns true if `module` defines `schema` with `arity`, false otherwise.
+  Returns `t:Context.t/0` for the given msa.
   """
-  @spec defines_schema?(module(), schema(), arity()) :: boolean()
-  def defines_schema?(module, schema, arity) do
-    module
-    |> schemas()
-    |> Enum.any?(&match?(%Context{module: ^module, schema: ^schema, params: p} when length(p) == arity, &1))
-  end
+  @spec get_schema(module(), schema(), arity()) :: Context.t() | nil
+  def get_schema(module, schema, arity), do: get_schemas(module)[{module, schema, arity}]
 end

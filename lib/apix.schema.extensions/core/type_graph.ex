@@ -39,7 +39,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   """
   @spec track!(Context.t()) :: :ok
   def track!(%Context{} = context) do
-    vertex = build_vertex(context)
+    vertex = Apix.Schema.msa(context)
     vertex_label = build_vertex_label(context)
 
     Graph.add_vertex(vertex, vertex_label)
@@ -51,7 +51,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
       ast ->
         # Referenced module can be undefined
         # || {m, s, length(a)}
-        ast_vertex = build_vertex(ast)
+        ast_vertex = Apix.Schema.msa(ast)
         ast_vertex_label = build_vertex_label(ast)
 
         Graph.add_vertex(ast_vertex, ast_vertex_label)
@@ -93,7 +93,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
 
       # Context changed, re-track it
       {%Context{} = context1, %Context{} = context2} ->
-        Graph.del_vertex(context1) |> dbg()
+        Graph.del_vertex(context1)
         track!(context2)
     end)
 
@@ -123,8 +123,8 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @spec validate!() :: :ok | no_return()
   def validate! do
     Graph.vertices()
-    |> Enum.each(fn {m, s, a} = msa ->
-      unless Apix.Schema.get_schema(m, s, a) do
+    |> Enum.each(fn msa ->
+      unless Apix.Schema.get_schema(msa) do
         {^msa, context} = Graph.vertex(msa)
         raise UndefinedReferenceAstError, context.ast
       end
@@ -147,11 +147,6 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
       ast
     end)
   end
-
-  defp build_vertex(%Ast{module: m, schema: s, args: a}), do: {m, s, length(a)}
-  defp build_vertex(%Ast{module: nil, schema: s, args: a} = ast), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(ast)}", s, length(a)}
-  defp build_vertex(%Context{module: m, schema: s, params: p}), do: {m, s, length(p)}
-  defp build_vertex(%Context{module: nil, schema: s, params: p} = context), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(context)}", s, length(p)}
 
   defp build_vertex_label(%Ast{module: m, schema: s, args: a}), do: Apix.Schema.get_schema(m, s, length(a))
   defp build_vertex_label(%Context{module: m, schema: s, params: p}), do: Apix.Schema.get_schema(m, s, length(p))

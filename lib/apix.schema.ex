@@ -1,4 +1,5 @@
 defmodule Apix.Schema do
+  alias Apix.Schema.Ast
   alias Apix.Schema.Context
   alias Apix.Schema.Extension
 
@@ -101,6 +102,18 @@ defmodule Apix.Schema do
   @doc """
   Returns `t:Context.t/0` for the given msa.
   """
+  @spec get_schema(msa()) :: Context.t() | nil
+  def get_schema({module, schema, arity}), do: get_schemas(module)[{module, schema, arity}]
+
   @spec get_schema(module(), schema(), arity()) :: Context.t() | nil
   def get_schema(module, schema, arity), do: get_schemas(module)[{module, schema, arity}]
+
+  @doc """
+  Returns `t:msa/0` for given `t:#{inspect Ast}.t/0` or `t:#{inspect Context}/0`
+  """
+  @spec msa(Ast.t() | Context.t()) :: msa()
+  def msa(%Ast{module: m, schema: s, args: a}), do: {m, s, length(a)}
+  def msa(%Ast{module: nil, schema: s, args: a} = ast), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(ast)}", s, length(a)}
+  def msa(%Context{module: m, schema: s, params: p}), do: {m, s, length(p)}
+  def msa(%Context{module: nil, schema: s, params: p} = context), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(context)}", s, length(p)}
 end

@@ -115,4 +115,22 @@ defmodule Apix.Schema.Ast do
 
     post.(ast, acc)
   end
+
+  @doc """
+  Checks for structural equality of two ASTs.
+
+  - If both ASTs match, returns `true`.
+  - If both ASTs are `t:t/0` and `ast1.module == ast2.module` and `ast1.schema == ast2.schema` with the same number of args, checks if all args are `equals?/2`.
+  - Otherwise `false`.
+  """
+  @spec equals?(t() | any(), t() | any()) :: boolean()
+  def equals?(ast, ast), do: true
+
+  def equals?(%__MODULE__{module: m, schema: s, args: a1} = ast1, %__MODULE__{module: m, schema: s, args: a2} = ast2) when length(a1) == length(a2) do
+    Enum.zip_reduce(ast1.args, ast2.args, true, fn arg1, arg2, acc ->
+      acc and equals?(arg1, arg2)
+    end)
+  end
+
+  def equals?(_ast1, _ast2), do: false
 end

@@ -20,12 +20,16 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
 
     vertices =
       Graph.vertices()
-      |> Map.new(fn {m, s, a} = v ->
-        t =
-          "\"#{inspect m}.#{s}/#{a}\""
-          |> String.replace(~r/Apix\.Schema\.Extensions\.[\w\d]+\./, "")
+      |> Map.new(fn msa ->
+        {^msa, context} = Graph.vertex(msa)
 
-        {v, t}
+        inspect =
+          context
+          |> dbg()
+          |> inspect()
+          |> String.replace("Apix.Schema.Extensions.", "")
+
+        {msa, "\"#{inspect}\""}
       end)
 
     vertices_dot =

@@ -103,9 +103,10 @@ defmodule Apix.Schema do
   Returns `t:Context.t/0` for the given msa.
   """
   @spec get_schema(msa()) :: Context.t() | nil
-  def get_schema({module, schema, arity}), do: get_schemas(module)[{module, schema, arity}]
+  def get_schema({module, schema, arity}), do: get_schema(module, schema, arity)
 
   @spec get_schema(module(), schema(), arity()) :: Context.t() | nil
+  def get_schema(nil, nil, 0), do: %Context{}
   def get_schema(module, schema, arity), do: get_schemas(module)[{module, schema, arity}]
 
   @doc """

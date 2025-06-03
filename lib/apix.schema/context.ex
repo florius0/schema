@@ -28,7 +28,7 @@ defmodule Apix.Schema.Context do
   - `extensions` – extensions the schema was defined with.
   """
   @type t() :: %__MODULE__{
-          ast: Ast.t() | nil,
+          ast: Ast.t(),
           data: any(),
           module: module(),
           schema: Schema.schema(),
@@ -62,7 +62,7 @@ defmodule Apix.Schema.Context do
           | {atom(), arity(), Ast.t()}
         ]
 
-  defstruct ast: nil,
+  defstruct ast: %Ast{},
             data: nil,
             module: nil,
             schema: nil,
@@ -133,7 +133,7 @@ defmodule Apix.Schema.Context do
   """
   @spec expression!(t(), Macro.t(), nil | Ast.t(), Macro.Env.t()) :: Ast.t()
   def expression!(%__MODULE__{} = context, elixir_ast, schema_ast \\ nil, env) do
-    schema_ast = schema_ast || context.ast || %Ast{}
+    schema_ast = schema_ast || context.ast
     delegates = build_delegates(context)
 
     prewalker = fn elixir_ast, schema_ast ->

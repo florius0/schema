@@ -5,7 +5,11 @@ import Inspect.Apix.Schema.Shared
 alias Apix.Schema.Context
 
 defimpl Inspect, for: Context do
+  def inspect(%Context{module: nil, schema: nil, params: []} = context, opts), do: color_doc("_", :rest, opts) |> enable(context, opts)
+
   def inspect(%Context{} = context, opts) do
+    context = maybe_rewrite_delegate(context, opts)
+
     definition =
       if opts.custom_options[:apix_schema_expand_definitions?] do
         color_doc(" #=> ", :rest, opts)
@@ -49,5 +53,20 @@ defimpl Inspect, for: Context do
       end
     )
     |> group()
+  end
+
+  defp maybe_rewrite_delegate(%Context{} = context, opts) do
+    rewrite? = Keyword.get(opts.custom_options, :apix_schema_rewrite_delegates?, true)
+
+    if rewrite? do
+      {{module, schema}, _to} =
+        context.extensions
+        |> Enum.flat_map(& &1.delegates)
+        |> List.keyfind({context.module, context.schema}, 1, {{context.module, context.schema}, nil})
+
+      struct(context, module: module, schema: schema)
+    else
+      context
+    end
   end
 end

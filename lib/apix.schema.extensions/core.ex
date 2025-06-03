@@ -27,6 +27,22 @@ defmodule Apix.Schema.Extensions.Core do
       {
         {Elixir.None, :t},
         {None, :t}
+      },
+      {
+        {Elixir.And, :t},
+        {And, :t}
+      },
+      {
+        {Elixir.Or, :t},
+        {Or, :t}
+      },
+      {
+        {Elixir.Not, :t},
+        {Not, :t}
+      },
+      {
+        {Elixir.Const, :t},
+        {Const, :t}
       }
     ]
   }

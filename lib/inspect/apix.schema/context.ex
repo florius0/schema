@@ -14,9 +14,9 @@ defimpl Inspect, for: Context do
         empty()
       end
 
-    context.module
-    |> Inspect.Atom.inspect(opts)
-    |> concat(color_doc(".#{context.schema}(", :call, opts))
+    "#{Macro.inspect_atom(:literal, context.module)}"
+    |> color_doc(:atom, opts)
+    |> concat(".#{Macro.inspect_atom(:remote_call, context.schema)}(" |> color_doc(:call, opts))
     |> concat(
       container_doc(
         empty(),
@@ -24,7 +24,7 @@ defimpl Inspect, for: Context do
         empty(),
         opts,
         &inspect/2,
-        separator: color_doc(", ", :list, opts)
+        separator: color_doc(",", :list, opts)
       )
     )
     |> concat(color_doc(")", :call, opts))
@@ -34,8 +34,7 @@ defimpl Inspect, for: Context do
   end
 
   def inspect({param, arity, default}, opts) do
-    param
-    |> to_string()
+    Macro.inspect_atom(:remote_call, param)
     |> color_doc(:rest, opts)
     |> concat(color_doc("/", :rest, opts))
     |> concat(color_doc(to_string(arity), :rest, opts))

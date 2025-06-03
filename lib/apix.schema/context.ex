@@ -1,6 +1,7 @@
 defmodule Apix.Schema.Context do
   alias Apix.Schema
   alias Apix.Schema.Ast
+  alias Apix.Schema.Ast.Meta
   alias Apix.Schema.Error
   alias Apix.Schema.Extension
   alias Apix.Schema.Warning
@@ -141,7 +142,7 @@ defmodule Apix.Schema.Context do
         extension
         |> Extension.expression!(context, elixir_ast, schema_ast, env, Macro.quoted_literal?(elixir_ast))
         |> rewrite_delegates(delegates)
-        |> Ast.Meta.maybe_put_in(env: env, elixir_ast: elixir_ast, generated_by: extension)
+        |> Meta.maybe_put_in(env: env, elixir_ast: elixir_ast, generated_by: extension)
       end)
       |> case do
         %Ast{} = schema_ast -> {schema_ast, schema_ast}
@@ -199,23 +200,32 @@ defmodule Apix.Schema.Context do
   @doc """
   Builds map of delegates for efficient rewriting in `rewrite_delegates/2`.
   """
-  @spec build_delegates(t()) :: %{Extension.delegate_target() => Extension.delegate_target()}
-  def build_delegates(%__MODULE__{extensions: e}) do
-    e
-    |> Enum.flat_map(& &1.delegates)
+  @spec build_delegates(t()) :: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}
+  def build_delegates(%__MODULE__{} = context) do
+    context.extensions
+    |> Enum.flat_map(fn extension ->
+      Enum.map(extension.delegates, fn {from, to} ->
+        {from, {to, extension}}
+      end)
+    end)
     |> Map.new()
   end
 
   @doc """
   Rewrites delegates in the AST node
   """
-  @spec rewrite_delegates(maybe_ast, %{Extension.delegate_target() => Extension.delegate_target()}) :: maybe_ast when maybe_ast: Ast.t() | any()
-  def rewrite_delegates(%Ast{module: m, schema: s} = ast, delegates) do
+  @spec rewrite_delegates(maybe_ast, %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}) :: maybe_ast when maybe_ast: Ast.t() | any()
+  def rewrite_delegates(%Ast{} = ast, delegates) do
     delegates
-    |> Map.get({m, s})
+    |> Map.get({ast.module, ast.schema})
     |> case do
-      {m, s} -> struct(ast, module: m, schema: s)
-      _ -> ast
+      {{module, schema}, extension} ->
+        ast
+        |> struct(module: module, schema: schema)
+        |> Meta.maybe_put_in(generated_by: extension)
+
+      _ ->
+        ast
     end
   end
 

@@ -46,7 +46,7 @@ defmodule Apix.Schema.Ast.Meta do
   @spec maybe_put_in(maybe_ast, opts()) :: maybe_ast when maybe_ast: Ast.t() | any()
   def maybe_put_in(ast, opts \\ [])
 
-  def maybe_put_in(%Ast{} = ast, opts), do: put_in_meta_field(ast, opts)
+  def maybe_put_in(%Ast{} = ast, opts), do: struct(ast, meta: merge(ast.meta, new(opts)))
   def maybe_put_in(ast, _opts), do: ast
 
   @doc """
@@ -65,7 +65,18 @@ defmodule Apix.Schema.Ast.Meta do
     |> struct(opts)
   end
 
-  defp put_in_meta_field(struct, opts), do: struct(struct, meta: new(opts))
+  @doc """
+  Merges two `t:t/0` together
+  """
+  @spec merge(t() | nil, t() | nil) :: t() | nil
+  def merge(meta1, meta2) do
+    %__MODULE__{
+      file: (meta1 && meta1.file) || (meta2 && meta2.file),
+      line: (meta1 && meta1.line) || (meta2 && meta2.line),
+      module: (meta1 && meta1.module) || (meta2 && meta2.module),
+      generated_by: (meta1 && meta1.generated_by) || (meta2 && meta2.generated_by)
+    }
+  end
 
   defp get_file(%{file: file}), do: file
   defp get_file(_env), do: nil

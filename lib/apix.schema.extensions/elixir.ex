@@ -48,6 +48,10 @@ defmodule Apix.Schema.Extensions.Elixir do
         {Integer, :t}
       },
       {
+        {Elixir.Integer, :non_neg},
+        {Integer, :non_neg}
+      },
+      {
         {Elixir.Float, :t},
         {Float, :t}
       },

@@ -33,6 +33,7 @@ defimpl Inspect, for: Context do
     )
     |> concat(color_doc(")", :call, opts))
     |> concat(definition)
+    |> mark(Context, opts)
     |> group()
     |> enable(context, opts)
   end

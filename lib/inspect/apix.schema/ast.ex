@@ -35,6 +35,7 @@ defimpl Inspect, for: Ast do
   def inspect(%Ast{} = ast, opts) do
     ast
     |> Ast.postwalk(&inspect_default(&1, opts))
+    |> mark(Ast, opts)
     |> group()
     |> enable(ast, opts)
   end

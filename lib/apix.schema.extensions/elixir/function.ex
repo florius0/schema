@@ -5,7 +5,7 @@ defmodule Apix.Schema.Extensions.Elixir.Function do
     validate is_function(it)
   end
 
-  schema t: Function.t(), params: [arity: Integer.non_neg()] do
+  schema t: t(), params: [arity: Integer.non_neg()] do
     validate is_function(it, arity() |> Const.value())
   end
 end

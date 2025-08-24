@@ -120,7 +120,9 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @doc """
   Validates the graph.
 
-  Raises `t:#{inspect FullyRecursiveAstError}.t/0`.
+  Raises either:
+    - `t:#{inspect FullyRecursiveAstError}.t/0`.
+    - `t:#{inspect UndefinedReferenceAstError}.t/0`.
 
   Intended to be called after either all code is compiled or on hot reloads.
   """
@@ -136,6 +138,9 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end)
   end
 
+  @doc """
+  Builds the sub/super-type relations in the graph.
+  """
   @spec build_type_relations!() :: :ok | no_return()
   def build_type_relations! do
     Graph.vertices()
@@ -143,6 +148,40 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
       {^hash, context} = Graph.vertex(hash)
       build_type_relations!(context)
     end)
+  end
+
+  @doc """
+  Returns `true` if `subtype` is a subtype of `supertype`.
+
+  - Structurally equal types are subtypes.
+  - Known and unknown types are not subtypes.
+  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
+  """
+  def is_subtype?(subtype, supertype) when (is_struct(subtype, Context) or is_struct(subtype, Ast)) and (is_struct(supertype, Context) or is_struct(supertype, Ast)) do
+    subtype = Apix.Schema.get_schema(subtype) || subtype
+    supertype = Apix.Schema.get_schema(supertype) || supertype
+
+    subtype_vertex = Apix.Schema.hash(subtype)
+    supertype_vertex = Apix.Schema.hash(supertype)
+
+    !!Graph.edge({subtype_vertex, supertype_vertex, :subtype})
+  end
+
+  @doc """
+  Returns `true` if `supertype` is a subtype of `subtype`.
+
+  - Structurally equal types are supertypes.
+  - Known and unknown types are not supertypes.
+  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
+  """
+  def is_supertype?(supertype, subtype) when (is_struct(supertype, Context) or is_struct(supertype, Ast)) and (is_struct(subtype, Context) or is_struct(subtype, Ast)) do
+    supertype = Apix.Schema.get_schema(supertype) || supertype
+    subtype = Apix.Schema.get_schema(subtype) || subtype
+
+    supertype_vertex = Apix.Schema.hash(supertype)
+    subtype_vertex = Apix.Schema.hash(subtype)
+
+    !!Graph.edge({supertype_vertex, subtype_vertex, :supertype})
   end
 
   defp build_type_relations!(%Context{} = context) do

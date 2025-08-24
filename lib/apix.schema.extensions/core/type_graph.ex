@@ -22,7 +22,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
 
   @doc """
   Runs all the `#{inspect __MODULE__}` functions that are intended to be run
-  after compilation if compilation is finished to avoid corrupting `#{inspect __MODULE__}` state:application
+  after compilation if compilation is finished to avoid corrupting `#{inspect __MODULE__}` state.
 
   - `prune!/0`
   - `validate!/0`
@@ -42,10 +42,12 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @doc """
   Tracks schema and it's references in the graph.
   """
-  @spec track!(Context.t()) :: :ok
-  def track!(%Context{} = context) do
-    vertex = Apix.Schema.msa(context)
-    vertex_label = build_vertex_label(context)
+  @spec track!(Context.t() | Ast.t()) :: :ok
+  def track!(context_or_ast) when is_struct(context_or_ast, Context) or is_struct(context_or_ast, Ast) do
+    context = Apix.Schema.get_schema(context_or_ast)
+
+    vertex = Apix.Schema.hash(context)
+    vertex_label = context
 
     Graph.add_vertex(vertex, vertex_label)
 
@@ -54,10 +56,8 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
         ast
 
       ast ->
-        # Referenced module can be undefined
-        # || {m, s, length(a)}
-        ast_vertex = Apix.Schema.msa(ast)
-        ast_vertex_label = build_vertex_label(ast)
+        ast_vertex = ast |> normalize() |> Apix.Schema.hash()
+        ast_vertex_label = Apix.Schema.get_schema(ast) || Apix.Schema.msa(ast)
 
         Graph.add_vertex(ast_vertex, ast_vertex_label)
         Graph.add_edge({vertex, ast_vertex, :references}, vertex, ast_vertex, :references)
@@ -77,43 +77,42 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @spec prune!() :: :ok
   def prune! do
     Graph.vertices()
-    |> Enum.map(fn msa ->
-      {^msa, context} = Graph.vertex(msa)
-      new_context = build_vertex_label(context)
+    |> Enum.map(fn hash ->
+      {^hash, context} = Graph.vertex(hash)
+      new_context = Apix.Schema.get_schema(context)
 
-      {context, new_context}
+      {hash, context, new_context}
     end)
     |> Enum.each(fn
       # "virtual" context, will handle orphans later
-      {%Context{module: nil}, nil} ->
+      {_hash, %Context{module: nil}, nil} ->
         :ok
 
       # Context unchanged, do nothing
-      {%Context{} = context, %Context{} = context} ->
+      {_hash, %Context{} = context, %Context{} = context} ->
         :ok
 
       # Context deleted, delete it
-      {%Context{} = context1, nil} ->
-        Graph.del_vertex(context1)
+      {hash, %Context{} = _context1, nil} ->
+        Graph.del_vertex(hash)
 
       # Context changed, re-track it
-      {%Context{} = context1, %Context{} = context2} ->
-        Graph.del_vertex(context1)
+      {hash, _context1, context2} ->
+        Graph.del_vertex(hash)
         track!(context2)
     end)
 
-    # Delete orphaned "virtual" contexts
+    # Delete "virtual" contexts
     # Do it as separate second pass since re-tracking may produce new edges
     Graph.vertices()
-    |> Enum.filter(fn msa ->
-      {^msa, context} = Graph.vertex(msa)
+    |> Enum.filter(fn hash ->
+      {^hash, context} = Graph.vertex(hash)
 
-      virtual? =
-        if context,
-          do: !!context.flags[:virtual?],
-          else: true
-
-      virtual? and Graph.in_degree(msa) + Graph.out_degree(msa) == 0
+      if context.module do
+        !!context.flags[:virtual?]
+      else
+        true
+      end
     end)
     |> Graph.del_vertices()
   end
@@ -128,9 +127,10 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @spec validate!() :: :ok | no_return()
   def validate! do
     Graph.vertices()
-    |> Enum.each(fn msa ->
-      unless Apix.Schema.get_schema(msa) do
-        {^msa, context} = Graph.vertex(msa)
+    |> Enum.each(fn hash ->
+      {^hash, context} = Graph.vertex(hash)
+
+      unless Apix.Schema.get_schema(context) do
         raise UndefinedReferenceAstError, context.ast
       end
     end)
@@ -139,17 +139,61 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   @spec build_type_relations!() :: :ok | no_return()
   def build_type_relations! do
     Graph.vertices()
-    |> Enum.each(fn msa ->
-      {^msa, context} = Graph.vertex(msa)
-      build_type_relations!(msa, context)
+    |> Enum.each(fn hash ->
+      {^hash, context} = Graph.vertex(hash)
+      build_type_relations!(context)
     end)
   end
 
-  defp build_type_relations!(_msa, %Context{} = context) do
+  defp build_type_relations!(%Context{} = context) do
     context.ast
-    |> Ast.prewalk(fn ast ->
-      # TODO
-      ast
+    |> normalize()
+    |> Ast.prewalk([{context, context}], fn
+      %Ast{module: m, schema: :t, args: [_, _]} = ast, [{parent_ast, parent_ast} | _rest] = acc when m in [And, Or] ->
+        {
+          ast,
+          [{m, ast.args} | acc]
+        }
+
+      %Ast{module: m, schema: :t, args: [_, _]} = ast, [{m, args} | _rest] = acc when m in [And, Or] ->
+        {
+          ast,
+          [{m, ast.args ++ args} | acc]
+        }
+
+      %Ast{} = ast, [{parent_ast, parent_ast} | _rest] = acc ->
+        {
+          ast,
+          [{ast, parent_ast} | acc]
+        }
+
+      ast, [{Or, args}, {parent_ast, parent_ast} | rest] ->
+        {
+          ast,
+          Enum.map(args, &{parent_ast, &1}) ++ [{parent_ast, parent_ast} | rest]
+        }
+
+      ast, [{And, args}, {parent_ast, parent_ast} | rest] ->
+        {
+          ast,
+          Enum.map(args, &{&1, parent_ast}) ++ [{parent_ast, parent_ast} | rest]
+        }
+
+      ast, acc ->
+        {ast, acc}
+    end)
+    |> elem(1)
+    |> Enum.each(fn {sup, sub} ->
+      sup = Apix.Schema.get_schema(sup) || sup
+      sub = Apix.Schema.get_schema(sub) || sub
+
+      sup_vertex = Apix.Schema.hash(sup)
+      sub_vertex = Apix.Schema.hash(sub)
+      sub_vertex_label = sub
+
+      Graph.add_vertex(sub_vertex, sub_vertex_label)
+      Graph.add_edge({sub_vertex, sup_vertex, :subtype}, sub_vertex, sup_vertex, :subtype)
+      Graph.add_edge({sup_vertex, sub_vertex, :supertype}, sup_vertex, sub_vertex, :supertype)
     end)
   end
 
@@ -163,10 +207,10 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     |> Ast.postwalk(&normalize_compact/1)
   end
 
-  def normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Any, schema: :t, args: []} = ast]}), do: struct(ast, module: None, schema: :t, args: [])
-  def normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: None, schema: :t, args: []} = ast]}), do: struct(ast, module: Any, schema: :t, args: [])
+  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Any, schema: :t, args: []} = ast]}), do: struct(ast, module: None, schema: :t, args: [])
+  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: None, schema: :t, args: []} = ast]}), do: struct(ast, module: Any, schema: :t, args: [])
 
-  def normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: And, schema: :t, args: args}]} = ast) do
+  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: And, schema: :t, args: args}]} = ast) do
     args
     |> Enum.sort_by(&Apix.Schema.msa/1)
     |> Enum.map(&struct(ast, module: Not, schema: :t, args: [&1]))
@@ -174,7 +218,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     struct(ast, module: Or, schema: :t, args: args)
   end
 
-  def normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Or, schema: :t, args: args}]} = ast) do
+  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Or, schema: :t, args: args}]} = ast) do
     args
     |> Enum.sort_by(&Apix.Schema.msa/1)
     |> Enum.map(&struct(ast, module: Not, schema: :t, args: [&1]))
@@ -182,53 +226,60 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     struct(ast, module: And, schema: :t, args: args)
   end
 
-  def normalize_not(%Ast{module: Not, schema: :t, args: [arg]} = ast) do
-    msa = Apix.Schema.msa(arg)
+  defp normalize_not(%Ast{module: Not, schema: :t, args: [arg]} = ast) do
+    reject = [
+      Apix.Schema.msa(arg),
+      {And, :t, 2},
+      {Or, :t, 2},
+      {Not, :t, 1},
+      {Const, :t, 1},
+      {Any, :t, 0},
+      {None, :t, 0}
+    ]
 
     Graph.vertices()
-    |> Enum.filter(&(&1 not in [msa, {And, :t, 2}, {Or, :t, 2}, {Not, :t, 1}, {Const, :t, 1}, {Any, :t, 0}, {None, :t, 0}]))
-    |> Enum.sort()
-    |> IO.inspect()
-    |> Enum.map(fn msa ->
-      msa
+    |> Enum.map(fn hash ->
+      hash
       |> Graph.vertex()
       |> elem(1)
     end)
+    |> Enum.reject(&(Apix.Schema.msa(&1) in reject))
+    |> Enum.sort_by(&Apix.Schema.msa/1)
     |> case do
       [] ->
         struct(ast, module: None, schema: :t, args: [])
 
-      [ast] ->
-        ast
+      [context] ->
+        context.ast
 
       [first | rest] ->
-        Enum.reduce(rest, first, fn current, acc ->
-          struct(ast, module: And, schema: :t, args: [current, acc])
+        Enum.reduce(rest, first.ast, fn current, acc ->
+          struct(ast, module: And, schema: :t, args: [current.ast, acc])
         end)
     end
   end
 
-  def normalize_not(ast), do: ast
+  defp normalize_not(ast), do: ast
 
-  def normalize_double_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Not, schema: :t, args: [ast]}]}), do: ast
+  defp normalize_double_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Not, schema: :t, args: [ast]}]}), do: ast
 
-  def normalize_double_not(ast), do: ast
+  defp normalize_double_not(ast), do: ast
 
-  def normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: ast
-  def normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: ast
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: ast
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: ast
 
-  def normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: struct(ast, module: None, schema: :t, args: [])
-  def normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: struct(ast, module: None, schema: :t, args: [])
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: struct(ast, module: None, schema: :t, args: [])
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: struct(ast, module: None, schema: :t, args: [])
 
-  def normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: ast
-  def normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: ast
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: ast
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: ast
 
-  def normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: struct(ast, module: Any, schema: :t, args: [])
-  def normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: struct(ast, module: Any, schema: :t, args: [])
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: struct(ast, module: Any, schema: :t, args: [])
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: struct(ast, module: Any, schema: :t, args: [])
 
-  def normalize_identity(ast), do: ast
+  defp normalize_identity(ast), do: ast
 
-  def normalize_absorption(%Ast{module: And, schema: :t, args: [ast1, %Ast{module: Or, schema: :t, args: [ast2, ast3]}]} = ast) do
+  defp normalize_absorption(%Ast{module: And, schema: :t, args: [ast1, %Ast{module: Or, schema: :t, args: [ast2, ast3]}]} = ast) do
     if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
       ast1
     else
@@ -236,7 +287,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_absorption(%Ast{module: And, schema: :t, args: [%Ast{module: Or, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
+  defp normalize_absorption(%Ast{module: And, schema: :t, args: [%Ast{module: Or, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
     if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
       ast1
     else
@@ -244,7 +295,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_absorption(%Ast{module: Or, schema: :t, args: [ast1, %Ast{module: And, schema: :t, args: [ast2, ast3]}]} = ast) do
+  defp normalize_absorption(%Ast{module: Or, schema: :t, args: [ast1, %Ast{module: And, schema: :t, args: [ast2, ast3]}]} = ast) do
     if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
       ast1
     else
@@ -252,7 +303,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_absorption(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
+  defp normalize_absorption(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
     if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
       ast1
     else
@@ -260,9 +311,9 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_absorption(ast), do: ast
+  defp normalize_absorption(ast), do: ast
 
-  def normalize_idempotence(%Ast{module: And, schema: :t, args: [ast1, ast2]} = ast) do
+  defp normalize_idempotence(%Ast{module: And, schema: :t, args: [ast1, ast2]} = ast) do
     if Ast.equals?(ast1, ast2) do
       ast1
     else
@@ -270,7 +321,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_idempotence(%Ast{module: Or, schema: :t, args: [ast1, ast2]} = ast) do
+  defp normalize_idempotence(%Ast{module: Or, schema: :t, args: [ast1, ast2]} = ast) do
     if Ast.equals?(ast1, ast2) do
       ast1
     else
@@ -278,9 +329,9 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_idempotence(ast), do: ast
+  defp normalize_idempotence(ast), do: ast
 
-  def normalize_compact(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast1, ast2]}, %Ast{module: And, schema: :t, args: [ast3, ast4]} = inner_ast]} = ast) do
+  defp normalize_compact(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast1, ast2]}, %Ast{module: And, schema: :t, args: [ast3, ast4]} = inner_ast]} = ast) do
     cond do
       Ast.equals?(ast1, ast3) ->
         struct(ast, module: And, schema: :t, args: [ast1, struct(inner_ast, module: Or, schema: :t, args: [ast2, ast4])])
@@ -299,8 +350,5 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end
   end
 
-  def normalize_compact(ast), do: ast
-
-  defp build_vertex_label(%Ast{module: m, schema: s, args: a}), do: Apix.Schema.get_schema(m, s, length(a))
-  defp build_vertex_label(%Context{module: m, schema: s, params: p}), do: Apix.Schema.get_schema(m, s, length(p))
+  defp normalize_compact(ast), do: ast
 end

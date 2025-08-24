@@ -14,22 +14,21 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
   def to_dot(opts \\ []) do
     path = opts |> Keyword.get(:path, "#{inspect Graph}")
     formats = opts |> Keyword.get(:format) |> List.wrap()
-    filter_edges = opts |> Keyword.get(:filter_edges) |> List.wrap()
+    filter_edges = opts |> Keyword.get(:edges) |> List.wrap()
 
     dot_path = "#{path}.dot"
 
     vertices =
       Graph.vertices()
-      |> Map.new(fn msa ->
-        {^msa, context} = Graph.vertex(msa)
+      |> Map.new(fn hash ->
+        {^hash, context} = Graph.vertex(hash)
 
         inspect =
           context
-          |> dbg()
           |> inspect()
           |> String.replace("Apix.Schema.Extensions.", "")
 
-        {msa, "\"#{inspect}\""}
+        {hash, "\"#{inspect}\""}
       end)
 
     vertices_dot =
@@ -59,6 +58,6 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
     """
 
     File.write(dot_path, dot)
-    Enum.each(formats, &System.shell("dot -T#{&1} '#{dot_path}' -o '#{path}.#{&1}'"))
+    Enum.each(formats, &System.shell("neato -T#{&1} -Goverlap=prism -Gsep=+15 '#{dot_path}' -o '#{path}.#{&1}'"))
   end
 end

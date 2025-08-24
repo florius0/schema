@@ -117,10 +117,10 @@ defmodule Apix.Schema.Ast do
   end
 
   @doc """
-  Checks for structural equality of two ASTs.
+  Structurally compares `t:#{inspect Ast}.t/0`'s.
 
-  - If both ASTs match, returns `true`.
-  - If both ASTs are `t:t/0` and `ast1.module == ast2.module` and `ast1.schema == ast2.schema` with the same number of args, checks if all args are `equals?/2`.
+  - If both Asts match, returns `true`.
+  - If both Asts are have the same `module`, `schema` and their args are structurally equal, returns true
   - Otherwise `false`.
   """
   @spec equals?(t() | any(), t() | any()) :: boolean()
@@ -133,4 +133,11 @@ defmodule Apix.Schema.Ast do
   end
 
   def equals?(_ast1, _ast2), do: false
+
+  @doc """
+  Structurally computes hash of `t:t/0`
+  """
+  @spec hash(t()) :: integer()
+  def hash(%__MODULE__{} = ast), do: :erlang.phash2({ast.module, ast.schema, Enum.map(ast.args, &hash/1)})
+  def hash(other), do: :erlang.phash2(other)
 end

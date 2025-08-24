@@ -100,11 +100,30 @@ defmodule Apix.Schema do
   end
 
   @doc """
+  Structurally compares `t:#{inspect Context}.t/0`'s or `t:#{inspect Ast}.t/0`'s.
+  """
+  @spec equals?(context_or_ast, context_or_ast) :: boolean() when context_or_ast: Context.t() | Ast.t()
+  def equals?(%Context{} = context1, %Context{} = context2), do: Context.equals?(context1, context2)
+  def equals?(%Ast{} = ast1, %Ast{} = ast2), do: Ast.equals?(ast1, ast2)
+
+  @doc """
+  Structurally computes has of `t:#{inspect Context}.t/0` or `t:#{inspect Ast}.t/0`.
+  """
+  @spec hash(Context.t() | Ast.t()) :: integer()
+  def hash(%Context{} = context), do: Context.hash(context)
+  def hash(%Ast{} = ast), do: Ast.hash(ast)
+
+  @doc """
+  Returns `t:#{inspect Context}.t/0` for the given msa.
+  """
+  @spec get_schema(msa() | Context.t() | Ast.t()) :: Context.t() | nil
+  def get_schema({module, schema, arity}), do: get_schema(module, schema, arity)
+  def get_schema(%Context{} = context), do: get_schema(context.module, context.schema, length(context.params))
+  def get_schema(%Ast{} = ast), do: get_schema(ast.module, ast.schema, length(ast.args))
+
+  @doc """
   Returns `t:Context.t/0` for the given msa.
   """
-  @spec get_schema(msa()) :: Context.t() | nil
-  def get_schema({module, schema, arity}), do: get_schema(module, schema, arity)
-
   @spec get_schema(module(), schema(), arity()) :: Context.t() | nil
   def get_schema(nil, nil, 0), do: %Context{}
   def get_schema(module, schema, arity), do: get_schemas(module)[{module, schema, arity}]
@@ -112,9 +131,7 @@ defmodule Apix.Schema do
   @doc """
   Returns `t:msa/0` for given `t:#{inspect Ast}.t/0` or `t:#{inspect Context}/0`
   """
-  @spec msa(Ast.t() | Context.t()) :: msa()
-  def msa(%Ast{module: m, schema: s, args: a}), do: {m, s, length(a)}
-  def msa(%Ast{module: nil, schema: s, args: a} = ast), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(ast)}", s, length(a)}
+  @spec msa(Context.t() | Ast.t()) :: msa()
   def msa(%Context{module: m, schema: s, params: p}), do: {m, s, length(p)}
-  def msa(%Context{module: nil, schema: s, params: p} = context), do: {:"Elixir.Apix.Schema.Context.Virtual#{:erlang.phash2(context)}", s, length(p)}
+  def msa(%Ast{module: m, schema: s, args: a}), do: {m, s, length(a)}
 end

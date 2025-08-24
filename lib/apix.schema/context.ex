@@ -236,4 +236,26 @@ defmodule Apix.Schema.Context do
   """
   @spec map_ast(atom() | struct(), (any() -> any())) :: struct()
   def map_ast(%__MODULE__{} = context, fun), do: struct(context, ast: fun.(context))
+
+  @doc """
+  Structurally compares `t:#{inspect Context}.t/0`'s.
+
+  - If both Contexts match, returns `true`.
+  - If both Contexts have the same `module`, `schema`, number of `params` and their ASTs are structurally equal, returns `true`.
+  - Otherwise `false`
+  """
+  @spec equals?(t(), t()) :: boolean()
+  def equals?(%__MODULE__{} = context, %__MODULE__{} = context), do: true
+
+  def equals?(%__MODULE__{module: m, schema: s, params: p1} = context1, %__MODULE__{module: m, schema: s, params: p2} = context2) when length(p1) == length(p2) do
+    Ast.equals?(context1.ast, context2.ast)
+  end
+
+  def equals?(_context1, _context2), do: false
+
+  @doc """
+  Structurally computes hash of `t:t/0`
+  """
+  @spec hash(t()) :: integer()
+  def hash(%__MODULE__{} = context), do: :erlang.phash2({context.module, context.schema, length(context.params), Ast.hash(context.ast)})
 end

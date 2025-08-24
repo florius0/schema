@@ -5,7 +5,7 @@ defmodule Apix.Schema.Extensions.Elixir.Integer do
     validate is_integer(it)
   end
 
-  schema non_neg: t() do
+  schema non_neg: Integer.t() do
     validate it >= 0
   end
 end

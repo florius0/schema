@@ -8,7 +8,7 @@ defmodule Apix.Schema.Extensions.Elixir.Record do
     validate is_record(it)
   end
 
-  schema t: Tuple.t(), params: [:record] do
+  schema t: Record.t(), params: [:record] do
     validate Record.is_record(it, record() |> Const.value())
   end
 end

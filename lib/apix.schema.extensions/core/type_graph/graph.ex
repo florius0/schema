@@ -95,6 +95,30 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
     end
   end
 
+  @doc """
+  Like `:digraph.get_path/3`, but only traverses edges for which `predicate` returns `true`.
+
+  `predicate` can have arity 1, 3, or 4:
+    - `fn label -> boolean end`
+    - `fn from, to` -> boolean end`
+    - `fn from, to, label -> boolean end`
+    - `fn edge, from, to, label -> boolean end`
+
+  Returns `false` if no path exists, or a list of vertices `[v1, ..., vn]` otherwise.
+  """
+  @spec get_path_by(
+          :digraph.vertex(),
+          :digraph.vertex(),
+          (:digraph.label() -> boolean())
+          | (:digraph.vertex(), :digraph.vertex() -> boolean())
+          | (:digraph.vertex(), :digraph.vertex(), :digraph.label() -> boolean())
+          | (:digraph.edge(), :digraph.vertex(), :digraph.vertex(), :digraph.label() -> boolean())
+        ) :: false | [:digraph.edge()]
+  def get_path_by(source, target, predicate) when is_function(predicate, 1) or is_function(predicate, 2) or is_function(predicate, 3) or is_function(predicate, 4) do
+    ensure!()
+    GenServer.call(__MODULE__, {:get_path_by, source, target, predicate})
+  end
+
   # GenServer
 
   @impl GenServer
@@ -148,6 +172,11 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
     reply = apply(:digraph_utils, fun, args ++ [state.digraph])
 
     {:reply, reply, state}
+  end
+
+  def handle_call({:get_path_by, source, target, predicate}, _from, state) do
+    path = do_get_path_by(state.digraph, source, target, predicate)
+    {:reply, path, state}
   end
 
   @impl GenServer
@@ -212,5 +241,69 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
     digraph = :digraph.new(@opts)
 
     {:ok, %__MODULE__{digraph: digraph}}
+  end
+
+  defp do_get_path_by(_g, v, v, _predicate), do: [v]
+
+  defp do_get_path_by(g, source, target, predicate) do
+    # Ensure both vertices exist (match :digraph.get_path/3 behavior)
+    with {^source, _} <- :digraph.vertex(g, source) || :error,
+         {^target, _} <- :digraph.vertex(g, target) || :error do
+      bfs_with_edge_filter(g, source, target, predicate)
+    else
+      _ -> false
+    end
+  end
+
+  defp bfs_with_edge_filter(g, source, target, predicate) do
+    # Standard BFS over vertices, but we only traverse out-edges passing `predicate`
+    queue = :queue.from_list([source])
+    visited = MapSet.new([source])
+    prev = %{source => nil}
+
+    do_bfs(g, target, predicate, queue, visited, prev)
+  end
+
+  defp do_bfs(g, target, predicate, queue, visited, prev) do
+    case :queue.out(queue) do
+      {:empty, _} ->
+        false
+
+      {{:value, v}, queue1} ->
+        if v == target do
+          reconstruct_path(prev, v)
+        else
+          {queue2, visited2, prev2} = expand_neighbours(g, v, predicate, queue1, visited, prev)
+          do_bfs(g, target, predicate, queue2, visited2, prev2)
+        end
+    end
+  end
+
+  defp expand_neighbours(g, v, predicate, queue, visited, prev) do
+    # Filter out-edges by predicate, then enqueue unseen `to` vertices
+    Enum.reduce(:digraph.out_edges(g, v), {queue, visited, prev}, fn e, {q, vis, pr} ->
+      {^e, from, to, label} = :digraph.edge(g, e)
+
+      if edge_passes?(predicate, e, from, to, label) and not MapSet.member?(vis, to) do
+        {:queue.in(to, q), MapSet.put(vis, to), Map.put(pr, to, from)}
+      else
+        {q, vis, pr}
+      end
+    end)
+  end
+
+  defp edge_passes?(predicate, _e, _from, _to, label) when is_function(predicate, 1), do: predicate.(label)
+  defp edge_passes?(predicate, _e, from, to, _label) when is_function(predicate, 2), do: predicate.(from, to)
+  defp edge_passes?(predicate, _e, from, to, label) when is_function(predicate, 3), do: predicate.(from, to, label)
+  defp edge_passes?(predicate, e, from, to, label) when is_function(predicate, 4), do: predicate.(e, from, to, label)
+
+  defp reconstruct_path(prev, v), do: do_reconstruct(prev, v, []) |> Enum.reverse()
+
+  defp do_reconstruct(prev, v, acc) do
+    case Map.fetch(prev, v) do
+      {:ok, nil} -> [v | acc]
+      {:ok, p} -> do_reconstruct(prev, p, [v | acc])
+      :error -> false
+    end
   end
 end

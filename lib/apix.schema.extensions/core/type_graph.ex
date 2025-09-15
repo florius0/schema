@@ -22,7 +22,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
 
   @doc """
   Runs all the `#{inspect __MODULE__}` functions that are intended to be run
-  after compilation if compilation is finished to avoid corrupting `#{inspect __MODULE__}` state.
+  after compilation is finished to avoid corrupting `#{inspect __MODULE__}` state.
 
   - `prune!/0`
   - `validate!/0`
@@ -157,14 +157,23 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   - Known and unknown types are not subtypes.
   - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
   """
+  def is_subtype?(_subtype, %Context{module: Any, schema: :t, params: []}), do: true
+  def is_subtype?(_subtype, %Ast{module: Any, schema: :t, args: []}), do: true
+
   def is_subtype?(subtype, supertype) when (is_struct(subtype, Context) or is_struct(subtype, Ast)) and (is_struct(supertype, Context) or is_struct(supertype, Ast)) do
-    subtype = Apix.Schema.get_schema(subtype) || subtype
-    supertype = Apix.Schema.get_schema(supertype) || supertype
+    subtype =
+      subtype
+      |> Apix.Schema.get_schema()
+      |> Kernel.||(subtype)
+      |> Apix.Schema.hash()
 
-    subtype_vertex = Apix.Schema.hash(subtype)
-    supertype_vertex = Apix.Schema.hash(supertype)
+    supertype =
+      supertype
+      |> Apix.Schema.get_schema()
+      |> Kernel.||(supertype)
+      |> Apix.Schema.hash()
 
-    !!Graph.edge({subtype_vertex, supertype_vertex, :subtype})
+    !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
   end
 
   @doc """
@@ -174,57 +183,71 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   - Known and unknown types are not supertypes.
   - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
   """
+  def is_supertype?(%Context{module: Any, schema: :t, params: []}, _subtype), do: true
+  def is_supertype?(%Ast{module: Any, schema: :t, args: []}, _subtype), do: true
+
   def is_supertype?(supertype, subtype) when (is_struct(supertype, Context) or is_struct(supertype, Ast)) and (is_struct(subtype, Context) or is_struct(subtype, Ast)) do
-    supertype = Apix.Schema.get_schema(supertype) || supertype
-    subtype = Apix.Schema.get_schema(subtype) || subtype
+    supertype =
+      supertype
+      |> Apix.Schema.get_schema()
+      |> Kernel.||(supertype)
+      |> Apix.Schema.hash()
 
-    supertype_vertex = Apix.Schema.hash(supertype)
-    subtype_vertex = Apix.Schema.hash(subtype)
+    subtype =
+      subtype
+      |> Apix.Schema.get_schema()
+      |> Kernel.||(subtype)
+      |> Apix.Schema.hash()
 
-    !!Graph.edge({supertype_vertex, subtype_vertex, :supertype})
+    !!Graph.get_path_by(subtype, supertype, &(&1 == :supertype))
   end
 
-  defp build_type_relations!(%Context{} = context) do
-    context.ast
+  def build_type_relations!(context_or_ast) do
+    context_or_ast
+    |> case do
+      %Context{} = context ->
+        context.ast
+
+      %Ast{} = ast ->
+        ast
+    end
     |> normalize()
-    |> Ast.prewalk([{context, context}], fn
-      %Ast{module: m, schema: :t, args: [_, _]} = ast, [{parent_ast, parent_ast} | _rest] = acc when m in [And, Or] ->
+    |> Ast.prewalk({context_or_ast, []}, fn
+      ast, {%Ast{module: And, schema: :t, args: [_, _]} = last, relations} ->
         {
           ast,
-          [{m, ast.args} | acc]
+          {last, [{ast, last} | relations]}
         }
 
-      %Ast{module: m, schema: :t, args: [_, _]} = ast, [{m, args} | _rest] = acc when m in [And, Or] ->
-        {
-          ast,
-          [{m, ast.args ++ args} | acc]
-        }
+      ast, {%Ast{module: Or, schema: :t, args: [_, _]} = last, relations} ->
+        {ast, {last, [{last, ast} | relations]}}
 
-      %Ast{} = ast, [{parent_ast, parent_ast} | _rest] = acc ->
-        {
-          ast,
-          [{ast, parent_ast} | acc]
-        }
-
-      ast, [{Or, args}, {parent_ast, parent_ast} | rest] ->
-        {
-          ast,
-          Enum.map(args, &{parent_ast, &1}) ++ [{parent_ast, parent_ast} | rest]
-        }
-
-      ast, [{And, args}, {parent_ast, parent_ast} | rest] ->
-        {
-          ast,
-          Enum.map(args, &{&1, parent_ast}) ++ [{parent_ast, parent_ast} | rest]
-        }
+      ast, {last, []} ->
+        {ast, {ast, [{last, ast}]}}
 
       ast, acc ->
         {ast, acc}
     end)
     |> elem(1)
+    |> elem(1)
     |> Enum.each(fn {sup, sub} ->
-      sup = Apix.Schema.get_schema(sup) || sup
-      sub = Apix.Schema.get_schema(sub) || sub
+      sup =
+        case sup do
+          %{module: m} when m in [And, Or] ->
+            sup
+
+          _ ->
+            Apix.Schema.get_schema(sup) || sup
+        end
+
+      sub =
+        case sub do
+          %{module: m} when m in [And, Or] ->
+            sub
+
+          _ ->
+            Apix.Schema.get_schema(sub) || sub
+        end
 
       sup_vertex = Apix.Schema.hash(sup)
       sub_vertex = Apix.Schema.hash(sub)
@@ -250,31 +273,38 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: None, schema: :t, args: []} = ast]}), do: struct(ast, module: Any, schema: :t, args: [])
 
   defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: And, schema: :t, args: args}]} = ast) do
-    args
-    |> Enum.sort_by(&Apix.Schema.msa/1)
-    |> Enum.map(&struct(ast, module: Not, schema: :t, args: [&1]))
+    args =
+      args
+      |> Enum.sort_by(&Apix.Schema.msa/1)
+      |> Enum.map(&struct(ast, module: Not, schema: :t, args: [&1]))
 
     struct(ast, module: Or, schema: :t, args: args)
   end
 
-  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Or, schema: :t, args: args}]} = ast) do
-    args
-    |> Enum.sort_by(&Apix.Schema.msa/1)
-    |> Enum.map(&struct(ast, module: Not, schema: :t, args: [&1]))
-
-    struct(ast, module: And, schema: :t, args: args)
-  end
-
   defp normalize_not(%Ast{module: Not, schema: :t, args: [arg]} = ast) do
-    reject = [
-      Apix.Schema.msa(arg),
-      {And, :t, 2},
-      {Or, :t, 2},
-      {Not, :t, 1},
-      {Const, :t, 1},
-      {Any, :t, 0},
-      {None, :t, 0}
-    ]
+    reject =
+      arg
+      |> Ast.postwalk([], fn
+        %Ast{module: Or, schema: :t, args: args} = ast, acc ->
+          msa =
+            args
+            |> Enum.map(&Apix.Schema.msa/1)
+            |> Enum.reject(&(&1 == {Or, :t, 2}))
+
+          {ast, msa ++ acc}
+
+        ast, acc ->
+          {ast, acc}
+      end)
+      |> elem(1)
+      |> Kernel.++([
+        {And, :t, 2},
+        {Or, :t, 2},
+        {Not, :t, 1},
+        {Const, :t, 1},
+        {Any, :t, 0},
+        {None, :t, 0}
+      ])
 
     Graph.vertices()
     |> Enum.map(fn hash ->
@@ -284,6 +314,7 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
     end)
     |> Enum.reject(&(Apix.Schema.msa(&1) in reject))
     |> Enum.sort_by(&Apix.Schema.msa/1)
+    |> Enum.uniq()
     |> case do
       [] ->
         struct(ast, module: None, schema: :t, args: [])
@@ -292,8 +323,8 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
         context.ast
 
       [first | rest] ->
-        Enum.reduce(rest, first.ast, fn current, acc ->
-          struct(ast, module: And, schema: :t, args: [current.ast, acc])
+        Enum.reduce(rest, %Ast{module: first.module, schema: first.schema, args: Enum.map(first.params, fn _ -> false end)}, fn current, acc ->
+          struct(ast, module: Or, schema: :t, args: [%Ast{module: current.module, schema: current.schema, args: Enum.map(current.params, fn _ -> false end)}, acc])
         end)
     end
   end

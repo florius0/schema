@@ -89,11 +89,11 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
         :ok
 
       # Context unchanged, do nothing
-      {_hash, %Context{} = context, %Context{} = context} ->
+      {_hash, context, context} ->
         :ok
 
       # Context deleted, delete it
-      {hash, %Context{} = _context1, nil} ->
+      {hash, _context1, nil} ->
         Graph.del_vertex(hash)
 
       # Context changed, re-track it

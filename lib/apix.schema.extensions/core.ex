@@ -15,8 +15,6 @@ defmodule Apix.Schema.Extensions.Core do
 
   alias Apix.Schema.Extensions.Core.Const
 
-  alias Apix.Schema.Extensions.Core.TypeGraph
-
   @manifest %Extension{
     module: __MODULE__,
     delegates: [
@@ -78,7 +76,6 @@ defmodule Apix.Schema.Extensions.Core do
   def manifest, do: @manifest
 
   @impl Extension
-  @spec expression!(any(), any(), any(), any(), any()) :: false | struct()
   def expression!(_context, {:shortdoc, _, [elixir_ast]}, schema_ast, env, _literal?) do
     {arg, _, _} = Code.eval_quoted_with_env(elixir_ast, [], env)
 
@@ -174,12 +171,4 @@ defmodule Apix.Schema.Extensions.Core do
   end
 
   def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
-
-  @impl Extension
-  def validate_ast!(context) do
-    TypeGraph.track!(context)
-    TypeGraph.on_compilation!()
-
-    context
-  end
 end

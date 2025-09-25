@@ -1,8 +1,8 @@
-defmodule Apix.Schema.Extensions.Core.TypeGraph.Graph do
+defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   use GenServer
 
-  require Apix.Schema.Extensions.Core.TypeGraph.Definition
-  Apix.Schema.Extensions.Core.TypeGraph.Definition.define()
+  require Apix.Schema.Extensions.TypeGraph.Definition
+  Apix.Schema.Extensions.TypeGraph.Definition.define()
 
   @moduledoc """
   Low level graph utilities.

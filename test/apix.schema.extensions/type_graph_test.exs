@@ -1,10 +1,10 @@
-defmodule Apix.Schema.Extensions.Core.TypeGraphTest do
+defmodule Apix.Schema.Extensions.TypeGraphTest do
   use Apix.Schema.Case
 
-  alias Apix.Schema.Extensions.Core.TypeGraph
-  alias Apix.Schema.Extensions.Core.TypeGraph.Graph
+  alias Apix.Schema.Extensions.TypeGraph
+  alias Apix.Schema.Extensions.TypeGraph.Graph
 
-  describe "#{inspect Apix.Schema.Extensions.Core.TypeGraph}" do
+  describe "#{inspect Apix.Schema.Extensions.TypeGraph}" do
     test "track!/1 | tracks schema definitions" do
       defmodule TestSchema1 do
         use Apix.Schema

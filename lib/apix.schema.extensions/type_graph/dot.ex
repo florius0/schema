@@ -1,5 +1,5 @@
-defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
-  alias Apix.Schema.Extensions.Core.TypeGraph.Graph
+defmodule Apix.Schema.Extensions.TypeGraph.Dot do
+  alias Apix.Schema.Extensions.TypeGraph.Graph
 
   @moduledoc """
   Utility to visualize the graph in dot format.
@@ -8,13 +8,20 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
   @doc """
   Serializes the graph to dot format.
 
-  Optionally, renders it in given formats using `dot` program.
+  Optionally, renders it in given formats using `dot-compatible` program.
+
+  ## Options
+  - `:program` – program to use to render the graph. Defaults to `:neato`. Other common options are `:dot`, `:fdp`, `:sfdp`, `:twopi`, `:circo`.
+  - `:path` - path to save the dot file and rendered files. Defaults to `#{inspect(Graph)}.dot/<format>`.
+  - `:format` – format(s) to render the graph in. Uses `dot` program. Supported formats depend on the installed `dot` program. Common ones are `:png`, `:svg`, `:pdf`. By default, no rendering is done.
+  - `:edges` – list of edge labels to include. By default, all edges are included.
   """
   @spec to_dot(keyword()) :: :ok
   def to_dot(opts \\ []) do
-    path = opts |> Keyword.get(:path, "#{inspect Graph}")
-    formats = opts |> Keyword.get(:format) |> List.wrap()
-    filter_edges = opts |> Keyword.get(:edges) |> List.wrap()
+    program = opts[:program] || :neato
+    path = opts[:path] || inspect(Graph)
+    formats = List.wrap(opts[:format])
+    filter_edges = List.wrap(opts[:edges])
 
     dot_path = "#{path}.dot"
 
@@ -58,6 +65,6 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph.Dot do
     """
 
     File.write(dot_path, dot)
-    Enum.each(formats, &System.shell("neato -T#{&1} -Goverlap=prism -Gsep=+15 '#{dot_path}' -o '#{path}.#{&1}'"))
+    Enum.each(formats, &System.shell("#{program} -T#{&1} -Goverlap=prism -Gsep=+15 '#{dot_path}' -o '#{path}.#{&1}'"))
   end
 end

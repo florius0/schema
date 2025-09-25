@@ -1,4 +1,4 @@
-defmodule Apix.Schema.Extensions.Core.Errors.FullyRecursiveAstError do
+defmodule Apix.Schema.Extensions.TypeGraph.Errors.FullyRecursiveAstError do
   alias Apix.Schema.Ast
 
   @fully_recursive """

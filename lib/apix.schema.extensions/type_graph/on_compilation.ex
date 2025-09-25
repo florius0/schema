@@ -1,5 +1,5 @@
-defmodule Apix.Schema.Extensions.Core.TypeGraph.OnCompilation do
-  alias Apix.Schema.Extensions.Core.TypeGraph
+defmodule Apix.Schema.Extensions.TypeGraph.OnCompilation do
+  alias Apix.Schema.Extensions.TypeGraph
 
   @moduledoc """
   OnCompilation Task.

@@ -1,4 +1,6 @@
-defmodule Apix.Schema.Extensions.Core.TypeGraph do
+defmodule Apix.Schema.Extensions.TypeGraph do
+  alias Apix.Schema.Extension
+
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
@@ -11,14 +13,52 @@ defmodule Apix.Schema.Extensions.Core.TypeGraph do
   alias Apix.Schema.Extensions.Core.Any
   alias Apix.Schema.Extensions.Core.None
 
-  alias Apix.Schema.Extensions.Core.TypeGraph.Graph
+  alias Apix.Schema.Extensions.TypeGraph.Graph
 
-  alias Apix.Schema.Extensions.Core.Errors.FullyRecursiveAstError
-  alias Apix.Schema.Extensions.Core.Errors.UndefinedReferenceAstError
+  alias Apix.Schema.Extensions.TypeGraph.Errors.FullyRecursiveAstError
+  alias Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError
+
+  @manifest %Extension{
+    module: __MODULE__
+  }
 
   @moduledoc """
-  High-level interface for working with graph of types information.
+  Type graph extension for `#{inspect Apix.Schema}`.
+  Provides high-level interface for working with graph of types information.
+
+  #{Extension.delegates_doc(@manifest)}
+
+  ## Expressions
+
+  - `relate/2` – returns what relationship exists between two type expressions one of which references another, e.g. `schema a: b()`
+      ```elixir
+      relate it, to do
+        [:relationship]
+      end
+  ```
+  - `relationship` – returns what relationship exists between two types expressions in general, e.g. is `a()` a subtype of `Any.t()`
+      ```elixir
+      relationship it, peer do
+        [:relationship]
+      end
+  ```
   """
+
+  @behaviour Extension
+
+  @impl Extension
+  def manifest, do: @manifest
+
+  @impl Extension
+  def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
+
+  @impl Extension
+  def validate_ast!(context) do
+    track!(context)
+    on_compilation!()
+
+    context
+  end
 
   @doc """
   Runs all the `#{inspect __MODULE__}` functions that are intended to be run

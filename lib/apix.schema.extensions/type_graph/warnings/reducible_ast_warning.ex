@@ -1,4 +1,4 @@
-defmodule Apix.Schema.Warnings.ReduceableAstWarning do
+defmodule Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
 
@@ -6,7 +6,7 @@ defmodule Apix.Schema.Warnings.ReduceableAstWarning do
   `#{inspect __MODULE__}` is raised when `t:#{inspect Ast}.t/0` can be reduced further, e.g.:
 
   ```elixir
-  defmodule RecursiveSchema do
+  defmodule RedundantSchema do
     use Apix.Schema
 
     # Can be written as just Ant.t()

@@ -1,4 +1,4 @@
-defmodule Apix.Schema.Extensions.Core.Errors.UndefinedReferenceAstError do
+defmodule Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError do
   alias Apix.Schema.Ast
 
   @undefined_reference """

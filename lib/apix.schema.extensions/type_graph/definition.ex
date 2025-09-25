@@ -1,5 +1,5 @@
-defmodule Apix.Schema.Extensions.Core.TypeGraph.Definition do
-  alias Apix.Schema.Extensions.Core.TypeGraph.Graph
+defmodule Apix.Schema.Extensions.TypeGraph.Definition do
+  alias Apix.Schema.Extensions.TypeGraph.Graph
 
   @moduledoc """
   Utilities to define delegates to `:digraph` and `:digraph_utils`.

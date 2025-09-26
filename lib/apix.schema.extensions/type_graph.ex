@@ -96,7 +96,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
         ast
 
       ast ->
-        ast_vertex = ast |> normalize() |> Apix.Schema.hash()
+        ast_vertex = context |> Context.normalize_ast!(ast) |> Apix.Schema.hash()
         ast_vertex_label = Apix.Schema.get_schema(ast) || Apix.Schema.msa(ast)
 
         Graph.add_vertex(ast_vertex, ast_vertex_label)
@@ -205,12 +205,14 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       subtype
       |> Apix.Schema.get_schema()
       |> Kernel.||(subtype)
+      |> Context.normalize_ast!()
       |> Apix.Schema.hash()
 
     supertype =
       supertype
       |> Apix.Schema.get_schema()
       |> Kernel.||(supertype)
+      |> Context.normalize_ast!()
       |> Apix.Schema.hash()
 
     !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
@@ -231,12 +233,14 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       supertype
       |> Apix.Schema.get_schema()
       |> Kernel.||(supertype)
+      |> Context.normalize_ast!()
       |> Apix.Schema.hash()
 
     subtype =
       subtype
       |> Apix.Schema.get_schema()
       |> Kernel.||(subtype)
+      |> Context.normalize_ast!()
       |> Apix.Schema.hash()
 
     !!Graph.get_path_by(subtype, supertype, &(&1 == :supertype))
@@ -244,14 +248,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   def build_type_relations!(context_or_ast) do
     context_or_ast
-    |> case do
-      %Context{} = context ->
-        context.ast
-
-      %Ast{} = ast ->
-        ast
-    end
-    |> normalize()
+    |> Context.normalize_ast!()
     |> Ast.prewalk({context_or_ast, []}, fn
       ast, {%Ast{module: And, schema: :t, args: [_, _]} = last, relations} ->
         {
@@ -298,167 +295,4 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       Graph.add_edge({sup_vertex, sub_vertex, :supertype}, sup_vertex, sub_vertex, :supertype)
     end)
   end
-
-  def normalize(ast) do
-    ast
-    |> Ast.postwalk(&normalize_not/1)
-    |> Ast.postwalk(&normalize_double_not/1)
-    |> Ast.postwalk(&normalize_identity/1)
-    |> Ast.postwalk(&normalize_absorption/1)
-    |> Ast.postwalk(&normalize_idempotence/1)
-    |> Ast.postwalk(&normalize_compact/1)
-  end
-
-  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Any, schema: :t, args: []} = ast]}), do: struct(ast, module: None, schema: :t, args: [])
-  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: None, schema: :t, args: []} = ast]}), do: struct(ast, module: Any, schema: :t, args: [])
-
-  defp normalize_not(%Ast{module: Not, schema: :t, args: [%Ast{module: And, schema: :t, args: args}]} = ast) do
-    args =
-      args
-      |> Enum.sort_by(&Apix.Schema.msa/1)
-      |> Enum.map(&struct(ast, module: Not, schema: :t, args: [&1]))
-
-    struct(ast, module: Or, schema: :t, args: args)
-  end
-
-  defp normalize_not(%Ast{module: Not, schema: :t, args: [arg]} = ast) do
-    reject =
-      arg
-      |> Ast.postwalk([], fn
-        %Ast{module: Or, schema: :t, args: args} = ast, acc ->
-          msa =
-            args
-            |> Enum.map(&Apix.Schema.msa/1)
-            |> Enum.reject(&(&1 == {Or, :t, 2}))
-
-          {ast, msa ++ acc}
-
-        ast, acc ->
-          {ast, acc}
-      end)
-      |> elem(1)
-      |> Kernel.++([
-        {And, :t, 2},
-        {Or, :t, 2},
-        {Not, :t, 1},
-        {Const, :t, 1},
-        {Any, :t, 0},
-        {None, :t, 0}
-      ])
-
-    Graph.vertices()
-    |> Enum.map(fn hash ->
-      hash
-      |> Graph.vertex()
-      |> elem(1)
-    end)
-    |> Enum.reject(&(Apix.Schema.msa(&1) in reject))
-    |> Enum.sort_by(&Apix.Schema.msa/1)
-    |> Enum.uniq()
-    |> case do
-      [] ->
-        struct(ast, module: None, schema: :t, args: [])
-
-      [context] ->
-        context.ast
-
-      [first | rest] ->
-        Enum.reduce(rest, %Ast{module: first.module, schema: first.schema, args: Enum.map(first.params, fn _ -> false end)}, fn current, acc ->
-          struct(ast, module: Or, schema: :t, args: [%Ast{module: current.module, schema: current.schema, args: Enum.map(current.params, fn _ -> false end)}, acc])
-        end)
-    end
-  end
-
-  defp normalize_not(ast), do: ast
-
-  defp normalize_double_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Not, schema: :t, args: [ast]}]}), do: ast
-
-  defp normalize_double_not(ast), do: ast
-
-  defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: ast
-  defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: ast
-
-  defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: struct(ast, module: None, schema: :t, args: [])
-  defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: struct(ast, module: None, schema: :t, args: [])
-
-  defp normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: ast
-  defp normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: ast
-
-  defp normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: struct(ast, module: Any, schema: :t, args: [])
-  defp normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: struct(ast, module: Any, schema: :t, args: [])
-
-  defp normalize_identity(ast), do: ast
-
-  defp normalize_absorption(%Ast{module: And, schema: :t, args: [ast1, %Ast{module: Or, schema: :t, args: [ast2, ast3]}]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
-  end
-
-  defp normalize_absorption(%Ast{module: And, schema: :t, args: [%Ast{module: Or, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
-  end
-
-  defp normalize_absorption(%Ast{module: Or, schema: :t, args: [ast1, %Ast{module: And, schema: :t, args: [ast2, ast3]}]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
-  end
-
-  defp normalize_absorption(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
-  end
-
-  defp normalize_absorption(ast), do: ast
-
-  defp normalize_idempotence(%Ast{module: And, schema: :t, args: [ast1, ast2]} = ast) do
-    if Ast.equals?(ast1, ast2) do
-      ast1
-    else
-      ast
-    end
-  end
-
-  defp normalize_idempotence(%Ast{module: Or, schema: :t, args: [ast1, ast2]} = ast) do
-    if Ast.equals?(ast1, ast2) do
-      ast1
-    else
-      ast
-    end
-  end
-
-  defp normalize_idempotence(ast), do: ast
-
-  defp normalize_compact(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast1, ast2]}, %Ast{module: And, schema: :t, args: [ast3, ast4]} = inner_ast]} = ast) do
-    cond do
-      Ast.equals?(ast1, ast3) ->
-        struct(ast, module: And, schema: :t, args: [ast1, struct(inner_ast, module: Or, schema: :t, args: [ast2, ast4])])
-
-      Ast.equals?(ast1, ast4) ->
-        struct(ast, module: And, schema: :t, args: [ast1, struct(inner_ast, module: Or, schema: :t, args: [ast2, ast3])])
-
-      Ast.equals?(ast2, ast3) ->
-        struct(ast, module: And, schema: :t, args: [ast2, struct(inner_ast, module: Or, schema: :t, args: [ast1, ast4])])
-
-      Ast.equals?(ast2, ast4) ->
-        struct(ast, module: And, schema: :t, args: [ast2, struct(inner_ast, module: Or, schema: :t, args: [ast1, ast3])])
-
-      true ->
-        ast
-    end
-  end
-
-  defp normalize_compact(ast), do: ast
 end

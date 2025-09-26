@@ -79,6 +79,11 @@ defmodule Apix.Schema.Extension do
   @callback expression!(Context.t(), Macro.t(), Ast.t(), Macro.Env.t(), literal? :: boolean()) :: Ast.t() | false
 
   @doc """
+  Optional callback to normalize `t:#{inspect Ast}.t/0`.
+  """
+  @callback normalize_ast!(Context.t(), Ast.t()) :: Ast.t()
+
+  @doc """
   TODO: Optional callback to cast data
   """
   @callback cast(Context.t()) :: Context.t()
@@ -87,6 +92,7 @@ defmodule Apix.Schema.Extension do
     install!: 1,
     validate_ast!: 1,
     expression!: 5,
+    normalize_ast!: 2,
     cast: 1
   ]
 
@@ -126,6 +132,18 @@ defmodule Apix.Schema.Extension do
       m.expression!(context, elixir_ast, schema_ast, env, literal?)
     else
       false
+    end
+  end
+
+  @doc """
+  Invokes `c:normalize_ast!/2`
+  """
+  @spec normalize_ast!(t(), Context.t(), Ast.t()) :: Ast.t()
+  def normalize_ast!(%__MODULE__{module: m}, context, ast) do
+    if function_exported?(m, :normalize_ast!, 3) do
+      m.normalize_ast!(context, ast)
+    else
+      ast
     end
   end
 

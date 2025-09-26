@@ -171,4 +171,105 @@ defmodule Apix.Schema.Extensions.Core do
   end
 
   def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
+
+  @impl Extension
+  def normalize_ast!(_context, ast) do
+    ast
+    |> Ast.postwalk(&normalize_double_not/1)
+    |> Ast.postwalk(&normalize_identity/1)
+    |> Ast.postwalk(&normalize_absorption/1)
+    |> Ast.postwalk(&normalize_idempotence/1)
+    |> Ast.postwalk(&normalize_compact/1)
+  end
+
+  defp normalize_double_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Not, schema: :t, args: [ast]}]}), do: ast
+
+  defp normalize_double_not(ast), do: ast
+
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: ast
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: ast
+
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: struct(ast, module: None, schema: :t, args: [])
+  defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: struct(ast, module: None, schema: :t, args: [])
+
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: None, schema: :t, args: []}]}), do: ast
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: None, schema: :t, args: []}, ast]}), do: ast
+
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: struct(ast, module: Any, schema: :t, args: [])
+  defp normalize_identity(%Ast{module: Or, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: struct(ast, module: Any, schema: :t, args: [])
+
+  defp normalize_identity(ast), do: ast
+
+  defp normalize_absorption(%Ast{module: And, schema: :t, args: [ast1, %Ast{module: Or, schema: :t, args: [ast2, ast3]}]} = ast) do
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
+      ast1
+    else
+      ast
+    end
+  end
+
+  defp normalize_absorption(%Ast{module: And, schema: :t, args: [%Ast{module: Or, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
+      ast1
+    else
+      ast
+    end
+  end
+
+  defp normalize_absorption(%Ast{module: Or, schema: :t, args: [ast1, %Ast{module: And, schema: :t, args: [ast2, ast3]}]} = ast) do
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
+      ast1
+    else
+      ast
+    end
+  end
+
+  defp normalize_absorption(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
+      ast1
+    else
+      ast
+    end
+  end
+
+  defp normalize_absorption(ast), do: ast
+
+  defp normalize_idempotence(%Ast{module: And, schema: :t, args: [ast1, ast2]} = ast) do
+    if Ast.equals?(ast1, ast2) do
+      ast1
+    else
+      ast
+    end
+  end
+
+  defp normalize_idempotence(%Ast{module: Or, schema: :t, args: [ast1, ast2]} = ast) do
+    if Ast.equals?(ast1, ast2) do
+      ast1
+    else
+      ast
+    end
+  end
+
+  defp normalize_idempotence(ast), do: ast
+
+  defp normalize_compact(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast1, ast2]}, %Ast{module: And, schema: :t, args: [ast3, ast4]} = inner_ast]} = ast) do
+    cond do
+      Ast.equals?(ast1, ast3) ->
+        struct(ast, module: And, schema: :t, args: [ast1, struct(inner_ast, module: Or, schema: :t, args: [ast2, ast4])])
+
+      Ast.equals?(ast1, ast4) ->
+        struct(ast, module: And, schema: :t, args: [ast1, struct(inner_ast, module: Or, schema: :t, args: [ast2, ast3])])
+
+      Ast.equals?(ast2, ast3) ->
+        struct(ast, module: And, schema: :t, args: [ast2, struct(inner_ast, module: Or, schema: :t, args: [ast1, ast4])])
+
+      Ast.equals?(ast2, ast4) ->
+        struct(ast, module: And, schema: :t, args: [ast2, struct(inner_ast, module: Or, schema: :t, args: [ast1, ast3])])
+
+      true ->
+        ast
+    end
+  end
+
+  defp normalize_compact(ast), do: ast
 end

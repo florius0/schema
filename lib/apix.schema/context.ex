@@ -198,6 +198,25 @@ defmodule Apix.Schema.Context do
   def normalize_params!(_context, _raw_params, _env), do: []
 
   @doc """
+  Normalizes `t:#{inspect Ast}.t/0`. through all extensions.
+
+  Same as `normalize_ast!/2` with `context.ast`.
+  """
+  @spec normalize_ast!(t() | Ast.t()) :: Ast.t()
+  def normalize_ast!(%__MODULE__{} = context), do: normalize_ast!(context, context.ast)
+  def normalize_ast!(%Ast{} = ast), do: ast |> Apix.Schema.get_schema() |> normalize_ast!(ast)
+
+  @doc """
+  Normalizes `t:#{inspect Ast}.t/0`. through all extensions.
+  """
+  @spec normalize_ast!(t(), Ast.t()) :: Ast.t()
+  def normalize_ast!(%__MODULE__{} = context, %Ast{} = ast) do
+    context.extensions
+    |> Enum.reverse()
+    |> Enum.reduce(ast, &Extension.normalize_ast!(&1, context, &2))
+  end
+
+  @doc """
   Builds map of delegates for efficient rewriting in `rewrite_delegates/2`.
   """
   @spec build_delegates(t()) :: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}

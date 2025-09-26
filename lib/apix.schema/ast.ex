@@ -1,6 +1,5 @@
 defmodule Apix.Schema.Ast do
   alias Apix.Schema
-  alias Apix.Schema.Validator
 
   alias __MODULE__.Meta
 
@@ -21,7 +20,9 @@ defmodule Apix.Schema.Ast do
   - `:shortdoc` – shortdoc for this AST node.
   - `:doc` – doc for this AST node.
   - `:examples` – list of examples for this AST node.
-  - `:validators` – TODO.
+  - `:validators` – list of `t:mfa()`'s of validators`t:mfa/0`. See `#{inspect Apix.Schema.Extensions.Validator}`
+  - `:relates` – list of `t:mfa()`'s of `relate`'s `t:mfa/0`. See `#{inspect Apix.Schema.Extensions.TypeGraph}`
+  - `:relationships` – list of `t:mfa()`'s of `relationships`'s `t:mfa/0`. See `#{inspect Apix.Schema.Extensions.TypeGraph}`
   - `:flags` – flags that are defined in this AST node.
   - `:meta` – See `t:#{inspect Meta}.t/0`.
   - `:parameter?` - is this AST node a parameter invocation?
@@ -33,7 +34,9 @@ defmodule Apix.Schema.Ast do
           shortdoc: String.t() | nil,
           doc: String.t() | nil,
           examples: [any()] | nil,
-          validators: [Validator.t()],
+          validators: [mfa()],
+          relates: [mfa()],
+          relationships: [mfa()],
           flags: keyword(),
           meta: Meta.t() | nil,
           parameter?: boolean()
@@ -46,6 +49,8 @@ defmodule Apix.Schema.Ast do
             doc: nil,
             examples: [],
             validators: [],
+            relates: [],
+            relationships: [],
             flags: [],
             meta: nil,
             parameter?: false

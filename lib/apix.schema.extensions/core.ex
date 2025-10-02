@@ -201,53 +201,41 @@ defmodule Apix.Schema.Extensions.Core do
   defp normalize_identity(ast), do: ast
 
   defp normalize_absorption(%Ast{module: And, schema: :t, args: [ast1, %Ast{module: Or, schema: :t, args: [ast2, ast3]}]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3),
+      do: ast1,
+      else: ast
   end
 
   defp normalize_absorption(%Ast{module: And, schema: :t, args: [%Ast{module: Or, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3),
+      do: ast1,
+      else: ast
   end
 
   defp normalize_absorption(%Ast{module: Or, schema: :t, args: [ast1, %Ast{module: And, schema: :t, args: [ast2, ast3]}]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3),
+      do: ast1,
+      else: ast
   end
 
   defp normalize_absorption(%Ast{module: Or, schema: :t, args: [%Ast{module: And, schema: :t, args: [ast2, ast3]}, ast1]} = ast) do
-    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3) do
-      ast1
-    else
-      ast
-    end
+    if Ast.equals?(ast1, ast2) or Ast.equals?(ast1, ast3),
+      do: ast1,
+      else: ast
   end
 
   defp normalize_absorption(ast), do: ast
 
   defp normalize_idempotence(%Ast{module: And, schema: :t, args: [ast1, ast2]} = ast) do
-    if Ast.equals?(ast1, ast2) do
-      ast1
-    else
-      ast
-    end
+    if Ast.equals?(ast1, ast2),
+      do: ast1,
+      else: ast
   end
 
   defp normalize_idempotence(%Ast{module: Or, schema: :t, args: [ast1, ast2]} = ast) do
-    if Ast.equals?(ast1, ast2) do
-      ast1
-    else
-      ast
-    end
+    if Ast.equals?(ast1, ast2),
+      do: ast1,
+      else: ast
   end
 
   defp normalize_idempotence(ast), do: ast

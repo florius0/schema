@@ -7,11 +7,9 @@ defmodule Inspect.Apix.Schema.Shared do
   def enable(doc, data, opts) do
     enabled? = Keyword.get(opts.custom_options, :apix_schema?, true)
 
-    if enabled? do
-      doc
-    else
-      Inspect.Any.inspect(data, opts)
-    end
+    if enabled?,
+      do: doc,
+      else: Inspect.Any.inspect(data, opts)
   end
 
   @spec mark(Inspect.Algebra.t(), atom(), Inspect.Opts.t()) :: Inspect.Algebra.t()

@@ -128,11 +128,9 @@ defmodule Apix.Schema.Extension do
   """
   @spec expression!(t(), Context.t(), Macro.t(), Ast.t(), Macro.Env.t(), literal? :: boolean()) :: Ast.t() | false
   def expression!(%__MODULE__{module: m}, context, elixir_ast, schema_ast, env, literal?) do
-    if function_exported?(m, :expression!, 5) do
-      m.expression!(context, elixir_ast, schema_ast, env, literal?)
-    else
-      false
-    end
+    if function_exported?(m, :expression!, 5),
+      do: m.expression!(context, elixir_ast, schema_ast, env, literal?),
+      else: false
   end
 
   @doc """
@@ -140,11 +138,9 @@ defmodule Apix.Schema.Extension do
   """
   @spec normalize_ast!(t(), Context.t(), Ast.t()) :: Ast.t()
   def normalize_ast!(%__MODULE__{module: m}, context, ast) do
-    if function_exported?(m, :normalize_ast!, 3) do
-      m.normalize_ast!(context, ast)
-    else
-      ast
-    end
+    if function_exported?(m, :normalize_ast!, 3),
+      do: m.normalize_ast!(context, ast),
+      else: ast
   end
 
   @doc """

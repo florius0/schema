@@ -256,7 +256,6 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   end
 
   defp bfs_with_edge_filter(g, source, target, predicate) do
-    # Standard BFS over vertices, but we only traverse out-edges passing `predicate`
     queue = :queue.from_list([source])
     visited = MapSet.new([source])
     prev = %{source => nil}
@@ -280,15 +279,12 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   end
 
   defp expand_neighbours(g, v, predicate, queue, visited, prev) do
-    # Filter out-edges by predicate, then enqueue unseen `to` vertices
     Enum.reduce(:digraph.out_edges(g, v), {queue, visited, prev}, fn e, {q, vis, pr} ->
       {^e, from, to, label} = :digraph.edge(g, e)
 
-      if edge_passes?(predicate, e, from, to, label) and not MapSet.member?(vis, to) do
-        {:queue.in(to, q), MapSet.put(vis, to), Map.put(pr, to, from)}
-      else
-        {q, vis, pr}
-      end
+      if edge_passes?(predicate, e, from, to, label) and not MapSet.member?(vis, to),
+        do: {:queue.in(to, q), MapSet.put(vis, to), Map.put(pr, to, from)},
+        else: {q, vis, pr}
     end)
   end
 

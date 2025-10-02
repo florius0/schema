@@ -50,8 +50,10 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   1. `{:subtype, sub, sup}` – `sub` is a subtype of `sup` meaning values valid against `sub` are also valid against `sup` (not necessarily true in reverse).
   2. `{:supertype, sup, sub}` – `sup` is a supertype of `sub` meaning values valid against `sub` are also valid against `sup` (not necessarily true in reverse).
-  3. `{:references, from, to}` – `from` references `to` meaning `from` schema uses `to` schema in it's definition.
-  4. `{:referenced, to, from}` – `to` is referenced by `from` meaning `to` schema is used in `from` schema definition.
+  3. `{:not_subtype, sub, sup}` – `sub` is not a subtype of `sup` meaning values valid against `sub` are not valid against `sup`.
+  4. `{:not_supertype, sup, sub}` – `sup` is not a supertype of `sub` meaning values valid against `sub` are not valid against `sup`.
+  5. `{:references, from, to}` – `from` references `to` meaning `from` schema uses `to` schema in it's definition.
+  6. `{:referenced, to, from}` – `to` is referenced by `from` meaning `to` schema is used in `from` schema definition.
 
   These relationships are designed to be returned in pairs by custom `relate` and `relationship` clauses and should be considered a dependency of the overall API.
 
@@ -342,10 +344,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     |> Context.normalize_ast!()
     |> Ast.prewalk({context_or_ast, []}, fn
       ast, {%Ast{module: And, schema: :t, args: [_, _]} = last, relations} ->
-        {
-          ast,
-          {last, [{ast, last} | relations]}
-        }
+        {ast, {last, [{ast, last} | relations]}}
 
       ast, {%Ast{module: Or, schema: :t, args: [_, _]} = last, relations} ->
         {ast, {last, [{last, ast} | relations]}}
@@ -359,31 +358,38 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     |> elem(1)
     |> elem(1)
     |> Enum.each(fn {sup, sub} ->
-      sup =
+      sup_ast =
         case sup do
-          %{module: m} when m in [And, Or] ->
-            sup
-
-          _ ->
-            Apix.Schema.get_schema(sup) || sup
+          %Context{} -> sup.ast
+          %Ast{} -> sup
         end
 
-      sub =
+      sub_ast =
         case sub do
-          %{module: m} when m in [And, Or] ->
-            sub
-
-          _ ->
-            Apix.Schema.get_schema(sub) || sub
+          %Context{} -> sub.ast
+          %Ast{} -> sub
         end
 
-      sup_vertex = Apix.Schema.hash(sup)
-      sub_vertex = Apix.Schema.hash(sub)
-      sub_vertex_label = sub
+      sup_context = Apix.Schema.get_schema(sup) || sup
+      sub_context = Apix.Schema.get_schema(sub) || sub
 
-      Graph.add_vertex(sub_vertex, sub_vertex_label)
-      Graph.add_edge({sub_vertex, sup_vertex, :subtype}, sub_vertex, sup_vertex, :subtype)
-      Graph.add_edge({sup_vertex, sub_vertex, :supertype}, sup_vertex, sub_vertex, :supertype)
+      sup_ast_v = Apix.Schema.hash(sup_ast)
+      sub_ast_v = Apix.Schema.hash(sub_ast)
+      sup_ctx_v = Apix.Schema.hash(sup_context)
+      sub_ctx_v = Apix.Schema.hash(sub_context)
+
+      Graph.add_vertex(sup_ast_v, sup_ast)
+      Graph.add_vertex(sub_ast_v, sub_ast)
+      Graph.add_vertex(sup_ctx_v, sup_context)
+      Graph.add_vertex(sub_ctx_v, sub_context)
+
+      Graph.add_edge({sub_ctx_v, sub_ast_v, :subtype}, sub_ctx_v, sub_ast_v, :subtype)
+      Graph.add_edge({sub_ast_v, sup_ast_v, :subtype}, sub_ast_v, sup_ast_v, :subtype)
+      Graph.add_edge({sup_ast_v, sup_ctx_v, :subtype}, sup_ast_v, sup_ctx_v, :subtype)
+
+      Graph.add_edge({sup_ctx_v, sup_ast_v, :supertype}, sup_ctx_v, sup_ast_v, :supertype)
+      Graph.add_edge({sup_ast_v, sub_ast_v, :supertype}, sup_ast_v, sub_ast_v, :supertype)
+      Graph.add_edge({sub_ast_v, sub_ctx_v, :supertype}, sub_ast_v, sub_ctx_v, :supertype)
     end)
   end
 end

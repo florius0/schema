@@ -69,6 +69,45 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @behaviour Extension
 
+  @doc """
+  Returns `true` if `subtype` is a subtype of `supertype`.
+
+  - Structurally equal types are subtypes.
+  - Known and unknown types are not subtypes.
+  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
+  """
+  def is_subtype?(subtype, supertype) do
+    subtype = to_vertex(subtype)
+    supertype = to_vertex(supertype)
+
+    !Graph.get_path_by(subtype, supertype, &(&1 == :not_subtype)) and !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
+  end
+
+  @doc """
+  Returns `true` if `supertype` is a subtype of `subtype`.
+
+  - Structurally equal types are supertypes.
+  - Known and unknown types are not supertypes.
+  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
+  """
+  def is_supertype?(supertype, subtype) do
+    supertype = to_vertex(supertype)
+    subtype = to_vertex(subtype)
+
+    !Graph.get_path_by(subtype, supertype, &(&1 == :not_supertype)) and !!Graph.get_path_by(subtype, supertype, &(&1 == :supertype))
+  end
+
+  @doc """
+  Returns `true` if path matching the `predicate` exists between `from` and `to` vertices in the graph.
+
+  Note that this function knows nothing about the semantics of the graph, it just finds a path matching the `predicate`.
+  """
+  def path_exists?(from, to, predicate) do
+    from = to_vertex(from)
+    to = to_vertex(to)
+
+    !!Graph.get_path_by(from, to, predicate)
+  end
 
   @doc """
   Calls the `relate/2` function to determine relationships between two types.

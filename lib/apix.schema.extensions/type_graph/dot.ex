@@ -18,10 +18,22 @@ defmodule Apix.Schema.Extensions.TypeGraph.Dot do
   """
   @spec to_dot(keyword()) :: :ok
   def to_dot(opts \\ []) do
+    dbg? = opts[:dbg?]
     program = opts[:program] || :neato
     path = opts[:path] || inspect(Graph)
     formats = List.wrap(opts[:format])
     filter_edges = List.wrap(opts[:edges])
+
+    reject_vertices =
+      opts[:vertices]
+      |> List.wrap()
+      |> Enum.map(fn
+        %Regex{} = r ->
+          r
+
+        s ->
+          Regex.compile!(s)
+      end)
 
     dot_path = "#{path}.dot"
 
@@ -35,7 +47,16 @@ defmodule Apix.Schema.Extensions.TypeGraph.Dot do
           |> inspect()
           |> String.replace("Apix.Schema.Extensions.", "")
 
-        {hash, "\"#{inspect}\""}
+        {
+          hash,
+          if(dbg?,
+            do: "\"#{inspect} (#{hash})\"",
+            else: "\"#{inspect}\""
+          )
+        }
+      end)
+      |> Map.filter(fn {_k, v} ->
+        !Enum.any?(reject_vertices, &String.match?(v, &1))
       end)
 
     vertices_dot =
@@ -50,7 +71,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Dot do
     edges_dot =
       if filter_edges == [],
         do: edges_dot,
-        else: Enum.filter(edges_dot, fn {_f, _t, l} -> l in filter_edges end)
+        else: Enum.filter(edges_dot, fn {f, t, l} -> l in filter_edges && vertices[f] && vertices[t] end)
 
     edges_dot = Enum.map_join(edges_dot, "\n", fn {f, t, l} -> "#{vertices[f]} -> #{vertices[t]} [label = #{l}]" end)
 

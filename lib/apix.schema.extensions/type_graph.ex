@@ -4,11 +4,6 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
-  alias Apix.Schema.Extensions.Core.And
-  alias Apix.Schema.Extensions.Core.Or
-
-  alias Apix.Schema.Extensions.Core.Any
-
   alias Apix.Schema.Extensions.TypeGraph.Graph
 
   alias Apix.Schema.Extensions.TypeGraph.Errors.FullyRecursiveAstError
@@ -225,10 +220,6 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       {hash, context, new_context}
     end)
     |> Enum.each(fn
-      # "virtual" context, will handle orphans later
-      {_hash, %Context{module: nil}, nil} ->
-        :ok
-
       # Context unchanged, do nothing
       {_hash, context, context} ->
         :ok
@@ -242,20 +233,6 @@ defmodule Apix.Schema.Extensions.TypeGraph do
         Graph.del_vertex(hash)
         track!(context2)
     end)
-
-    # Delete "virtual" contexts
-    # Do it as separate second pass since re-tracking may produce new edges
-    Graph.vertices()
-    |> Enum.filter(fn hash ->
-      {^hash, context} = Graph.vertex(hash)
-
-      if context.module do
-        !!context.flags[:virtual?]
-      else
-        true
-      end
-    end)
-    |> Graph.del_vertices()
   end
 
   @doc """
@@ -287,117 +264,86 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     Graph.vertices()
     |> Enum.each(fn hash ->
       {^hash, context} = Graph.vertex(hash)
-      build_type_relations!(context)
+      build_type_relates!(context)
+    end)
+
+    Graph.vertices()
+    |> Enum.each(fn hash ->
+      {^hash, context} = Graph.vertex(hash)
+
+      peers =
+        Graph.vertices()
+        |> Kernel.--(Graph.in_neighbours(hash))
+        |> Kernel.--(Graph.out_neighbours(hash))
+        |> Enum.map(fn hash ->
+          {^hash, context} = Graph.vertex(hash)
+          context
+        end)
+
+      existing =
+        hash
+        |> Graph.in_edges()
+        |> Kernel.++(Graph.out_edges(hash))
+        |> Enum.map(fn {lv, rv, kind} ->
+          {^lv, left} = Graph.vertex(lv)
+          {^rv, right} = Graph.vertex(rv)
+
+          {kind, left, right}
+        end)
+
+      build_type_relationships!(context, peers, existing)
     end)
   end
 
   @doc """
-  Returns `true` if `subtype` is a subtype of `supertype`.
-
-  - Structurally equal types are subtypes.
-  - Known and unknown types are not subtypes.
-  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
+  Builds the sub/super-type relates in the graph for given `t:Context.t/0` or `t:Ast.t/0`.
   """
-  def is_subtype?(_subtype, %Context{module: Any, schema: :t, params: []}), do: true
-  def is_subtype?(_subtype, %Ast{module: Any, schema: :t, args: []}), do: true
+  def build_type_relates!(context_or_ast) do
+    normalized = Context.normalize_ast!(context_or_ast)
 
-  def is_subtype?(subtype, supertype) when (is_struct(subtype, Context) or is_struct(subtype, Ast)) and (is_struct(supertype, Context) or is_struct(supertype, Ast)) do
-    subtype =
-      subtype
-      |> Apix.Schema.get_schema()
-      |> Kernel.||(subtype)
-      |> Context.normalize_ast!()
-      |> Apix.Schema.hash()
+    normalized
+    |> Ast.traverse(
+      {[context_or_ast], relate(context_or_ast, context_or_ast)},
+      fn
+        ast, {[parent | _rest] = stack, acc} -> {ast, {[ast | stack], relate(parent, ast) ++ relate(ast, Apix.Schema.get_schema(ast)) ++ acc}}
+      end,
+      fn
+        ast, {[ast | stack], acc} -> {ast, {stack, acc}}
+        ast, {stack, acc} -> {ast, {stack, acc}}
+      end
+    )
+    |> elem(1)
+    |> elem(1)
+    |> Enum.each(fn {kind, left, right} ->
+      lv = Apix.Schema.hash(left)
+      rv = Apix.Schema.hash(right)
 
-    supertype =
-      supertype
-      |> Apix.Schema.get_schema()
-      |> Kernel.||(supertype)
-      |> Context.normalize_ast!()
-      |> Apix.Schema.hash()
-
-    !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
-  end
-
-  @doc """
-  Returns `true` if `supertype` is a subtype of `subtype`.
-
-  - Structurally equal types are supertypes.
-  - Known and unknown types are not supertypes.
-  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
-  """
-  def is_supertype?(%Context{module: Any, schema: :t, params: []}, _subtype), do: true
-  def is_supertype?(%Ast{module: Any, schema: :t, args: []}, _subtype), do: true
-
-  def is_supertype?(supertype, subtype) when (is_struct(supertype, Context) or is_struct(supertype, Ast)) and (is_struct(subtype, Context) or is_struct(subtype, Ast)) do
-    supertype =
-      supertype
-      |> Apix.Schema.get_schema()
-      |> Kernel.||(supertype)
-      |> Context.normalize_ast!()
-      |> Apix.Schema.hash()
-
-    subtype =
-      subtype
-      |> Apix.Schema.get_schema()
-      |> Kernel.||(subtype)
-      |> Context.normalize_ast!()
-      |> Apix.Schema.hash()
-
-    !!Graph.get_path_by(subtype, supertype, &(&1 == :supertype))
-  end
-
-  def build_type_relations!(context_or_ast) do
-    context_or_ast
-    |> Context.normalize_ast!()
-    |> Ast.prewalk({context_or_ast, []}, fn
-      ast, {%Ast{module: And, schema: :t, args: [_, _]} = last, relations} ->
-        {ast, {last, [{ast, last} | relations]}}
-
-      ast, {%Ast{module: Or, schema: :t, args: [_, _]} = last, relations} ->
-        {ast, {last, [{last, ast} | relations]}}
-
-      ast, {last, []} ->
-        {ast, {ast, [{last, ast}]}}
-
-      ast, acc ->
-        {ast, acc}
+      Graph.add_vertex(lv, left)
+      Graph.add_vertex(rv, right)
+      Graph.add_edge({lv, rv, kind}, lv, rv, kind)
     end)
-    |> elem(1)
-    |> elem(1)
-    |> Enum.each(fn {sup, sub} ->
-      sup_ast =
-        case sup do
-          %Context{} -> sup.ast
-          %Ast{} -> sup
-        end
+  end
 
-      sub_ast =
-        case sub do
-          %Context{} -> sub.ast
-          %Ast{} -> sub
-        end
+  def build_type_relationships!(context_or_ast, peers, existing) do
+    new = Enum.reduce(peers, existing, &relationship(context_or_ast, &1, &2))
 
-      sup_context = Apix.Schema.get_schema(sup) || sup
-      sub_context = Apix.Schema.get_schema(sub) || sub
+    add = new -- existing
+    delete = existing -- new
 
-      sup_ast_v = Apix.Schema.hash(sup_ast)
-      sub_ast_v = Apix.Schema.hash(sub_ast)
-      sup_ctx_v = Apix.Schema.hash(sup_context)
-      sub_ctx_v = Apix.Schema.hash(sub_context)
+    Enum.each(add, fn {kind, left, right} ->
+      lv = Apix.Schema.hash(left)
+      rv = Apix.Schema.hash(right)
 
-      Graph.add_vertex(sup_ast_v, sup_ast)
-      Graph.add_vertex(sub_ast_v, sub_ast)
-      Graph.add_vertex(sup_ctx_v, sup_context)
-      Graph.add_vertex(sub_ctx_v, sub_context)
+      Graph.add_vertex(lv, left)
+      Graph.add_vertex(rv, right)
+      Graph.add_edge({lv, rv, kind}, lv, rv, kind)
+    end)
 
-      Graph.add_edge({sub_ctx_v, sub_ast_v, :subtype}, sub_ctx_v, sub_ast_v, :subtype)
-      Graph.add_edge({sub_ast_v, sup_ast_v, :subtype}, sub_ast_v, sup_ast_v, :subtype)
-      Graph.add_edge({sup_ast_v, sup_ctx_v, :subtype}, sup_ast_v, sup_ctx_v, :subtype)
+    Enum.each(delete, fn {kind, left, right} ->
+      lv = Apix.Schema.hash(left)
+      rv = Apix.Schema.hash(right)
 
-      Graph.add_edge({sup_ctx_v, sup_ast_v, :supertype}, sup_ctx_v, sup_ast_v, :supertype)
-      Graph.add_edge({sup_ast_v, sub_ast_v, :supertype}, sup_ast_v, sub_ast_v, :supertype)
-      Graph.add_edge({sub_ast_v, sub_ctx_v, :supertype}, sub_ast_v, sub_ctx_v, :supertype)
+      Graph.del_edge({lv, rv, kind})
     end)
   end
 

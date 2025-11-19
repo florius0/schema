@@ -15,6 +15,15 @@ defmodule Apix.Schema.Extensions.Core do
 
   alias Apix.Schema.Extensions.Core.Const
 
+  @boolean_schemas [
+    And,
+    Or,
+    Not
+  ]
+
+  @doc false
+  def boolean_schemas, do: @boolean_schemas
+
   @manifest %Extension{
     module: __MODULE__,
     delegates: [

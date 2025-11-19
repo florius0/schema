@@ -9,7 +9,9 @@ locals_without_parens = [
   field: :*,
   key: :*,
   value: :*,
-  validate: :*
+  validate: :*,
+  relate: :*,
+  relationship: :*
 ]
 
 [

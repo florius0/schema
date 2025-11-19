@@ -22,28 +22,6 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   Type graph extension for `#{inspect Apix.Schema}`.
   Provides high-level interface for working with graph of types information.
 
-  #{Extension.delegates_doc(@manifest)}
-
-  ## Expressions
-
-  - `relate it, to, do: [{:relationship, it, to}]` – returns what relationships exist between two type expressions one of which references another, e.g. `schema a: b()`.
-
-     Another syntax variants:
-
-     - `relate it, to when guard, do: [{:relationship, it, to}]` – same as above but with guard clause
-     - `relate &Module.function/2` – uses 2-arity remote function capture
-     - `relate &function/2` – uses 2-arity local function capture
-     - `relate {Module, :function, args}` – uses MFA tuple to reference function. `args` will be appended to `[it, to]` when calling the function.
-
-  - `relationship it, peer, do: [{:relationship, it, peer}]` – returns what relationships exist between two types expressions in general, e.g. is `a()` a subtype of `Any.t()`.
-
-      Another syntax variants:
-
-      - `relationship it, peer when guard, do: [{:relationship, it, peer}]` – same as above but with guard clause
-      - `relationship &Module.function/2` – uses 2-arity remote function capture
-      - `relationship &function/2` – uses 2-arity local function capture
-      - `relationship {Module, :function, args}` – uses MFA tuple to reference function. `args` will be appended to `[it, peer]` when calling the function.
-
   ## Relationships
 
   Since `#{inspect Apix.Schema}` is set-theoretic, some relationship types are pre-defined:
@@ -57,119 +35,149 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   These relationships are designed to be returned in pairs by custom `relate` and `relationship` clauses and should be considered a dependency of the overall API.
 
+  Note that references/referenced relationships are managed automatically by the extension and do not need to be defined manually, though it is technically possible to do so.
+
   Users are free to define custom relationship types as they see fit, but should be aware that these custom relationships will not be used by `#{inspect Apix.Schema}` functionality directly.
+
+  ## Custom Relationships
+
+  This extension allows to define custom relationships between types using `relate/3` and `relationship/3` expressions.
+
+  By default, subtypes/supertypes are inferred automatically based on the structure of the types – `schema a: b()` means `a` is a subtype of `b`, since the semantics of the schema definition implies that all values valid against `a` must also be valid against `b`.
+  However, in some cases the structural inference may not be correct, for example when dealing with complex types or when the relationship is not strictly hierarchical, for example `schema a: b() or c()`.
+
+  In such cases, users can define custom relationships using `relate/2` and `relationship/3` expressions.
+
+  #{Extension.delegates_doc(@manifest)}
+
+  ## Expressions
+
+  - `relate it, to, do: [{:relationship, it, to}]` – returns what relationships exist between two type expressions one of which references another, e.g. `schema a: b()`.
+
+     Another syntax variants:
+
+     - `relate it, to when guard, do: [{:relationship, it, to}]` – same as above but with guard clause
+     - `relate &Module.function/2` – uses 2-arity remote function capture
+     - `relate &function/2` – uses 2-arity local function capture
+     - `relate {Module, :function, args}` – uses MFA tuple to reference function. `args` will be appended to `[it, to]` when calling the function.
+
+  - `relationship it, peer, existing, do: [{:relationship, it, peer}]` – returns what relationships exist between two types expressions in general, e.g. is `a()` a subtype of `Any.t()`.
+
+      Another syntax variants:
+
+      - `relationship it, peer, existing when guard, do: [{:relationship, it, peer}]` – same as above but with guard clause
+      - `relationship &Module.function/3` – uses 3-arity remote function capture
+      - `relationship &function/3` – uses 3-arity local function capture
+      - `relationship {Module, :function, args}` – uses MFA tuple to reference function. `args` will be appended to `[it, peer, existing]` when calling the function.
   ```
   """
 
   @behaviour Extension
 
-  @impl Extension
-  def manifest, do: @manifest
 
-  @impl Extension
-  def expression!(_context, {:relate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
-    function_name = :"__apix_schema_relate_#{:erlang.phash2(block)}__"
+  @doc """
+  Calls the `relate/2` function to determine relationships between two types.
 
-    quote do
-      def unquote(function_name)(unquote(arg1), unquote(arg2)) when unquote(guard), do: unquote(block)
+  Returns a list of relationships in the form of tuples `{:relationship, from, to}`.
+  By default, if no custom `relate/2` clauses are defined, it will return the basic relationships:
+
+  - `{:subtype, it, to}` – `it` is a subtype of `to` which is implied by `schema it: to()` semantics – for data to be valid relative to `it`, it also needs to be valid relative to `to`.
+  - `{:supertype, to, it}` – `to` is a supertype of `it` which is implied by `schema it: to()` semantics – for data to be valid relative to `it`, it also needs to be valid relative to `to`.
+  - `{:subtype, it, it}` – `it` is a subtype of itself which is always true.
+  - `{:supertype, it, it}` – `it` is a supertype of itself which is always true.
+  """
+  @spec relate(Context.t() | Ast.t(), Context.t() | Ast.t()) :: [{atom(), Context.t() | Ast.t(), Context.t() | Ast.t()}]
+
+  def relate(it, to) do
+    cond do
+      is_struct(it, Context) && length(it.ast.relates) > 0 ->
+        it.ast.relates
+
+      is_struct(it, Ast) && length(it.relates) > 0 ->
+        it.relates
+
+      (
+        context = Apix.Schema.get_schema(it)
+        context && length(context.ast.relates) > 0
+      ) ->
+        context.ast.relates
+
+      true ->
+        [{__MODULE__, :default_relate, []}]
     end
-    |> Code.eval_quoted([], env)
-
-    struct(schema_ast, relates: [{env.module, function_name, []}, schema_ast.relates])
+    |> Enum.flat_map(fn {m, f, a} ->
+      try do
+        apply(m, f, [it, to | a])
+      rescue
+        FunctionClauseError ->
+          []
+      end
+    end)
+    |> Enum.filter(&filter_underscore/1)
   end
 
-  def expression!(_context, {:relate, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
-    function_name = :"__apix_schema_relate_#{:erlang.phash2(block)}__"
-
-    quote do
-      def unquote(function_name)(unquote(arg1), unquote(arg2)), do: unquote(block)
-    end
-    |> Code.eval_quoted([], env)
-
-    struct(schema_ast, relates: [{env.module, function_name, []}, schema_ast.relates])
-  end
-
-  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function_name]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, [], env)
-
-    struct(schema_ast, relates: [{module, function_name, []} | schema_ast.relates])
-  end
-
-  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{function_name, _, _}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    struct(schema_ast, relates: [{env.module, function_name, []} | schema_ast.relates])
-  end
-
-  def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a] = mfa}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {mfa, _binding} = Code.eval_quoted(mfa, [], env)
-
-    struct(schema_ast, relates: [mfa | schema_ast.relates])
-  end
-
-  def expression!(_context, {:relationship, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
-    function_name = :"__apix_schema_relationship_#{:erlang.phash2(block)}__"
-
-    quote do
-      def unquote(function_name)(unquote(arg1), unquote(arg2)) when unquote(guard), do: unquote(block)
-    end
-    |> Code.eval_quoted([], env)
-
-    struct(schema_ast, relationships: [{env.module, function_name, []}, schema_ast.relationships])
-  end
-
-  def expression!(_context, {:relationship, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
-    function_name = :"__apix_schema_relationship_#{:erlang.phash2(block)}__"
-
-    quote do
-      def unquote(function_name)(unquote(arg1), unquote(arg2)), do: unquote(block)
-    end
-    |> Code.eval_quoted([], env)
-
-    struct(schema_ast, relationships: [{env.module, function_name, []}, schema_ast.relationships])
-  end
-
-  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function_name]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, [], env)
-
-    struct(schema_ast, relationships: [{module, function_name, []} | schema_ast.relationships])
-  end
-
-  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{function_name, _, _}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    struct(schema_ast, relationships: [{env.module, function_name, []} | schema_ast.relationships])
-  end
-
-  def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a] = mfa}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {mfa, _binding} = Code.eval_quoted(mfa, [], env)
-
-    struct(schema_ast, relationships: [mfa | schema_ast.relationships])
-  end
-
-  def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
-
-  @impl Extension
-  def validate_ast!(context) do
-    track!(context)
-    on_compilation!()
-
-    context
+  @doc false
+  def default_relate(it, to) do
+    [
+      {:subtype, it, to},
+      {:supertype, to, it},
+      {:subtype, it, it},
+      {:supertype, it, it}
+    ]
   end
 
   @doc """
-  Runs all the `#{inspect __MODULE__}` functions that are intended to be run
-  after compilation is finished to avoid corrupting `#{inspect __MODULE__}` state.
+  Calls the `relationship/3` function to determine relationships between two types in general.
 
-  - `prune!/0`
-  - `validate!/0`
-  - `build_type_relations!/0`
+  Returns a list of relationships in the form of tuples `{:relationship, it, peer}`.
+  By default, if no custom `relationship/3` clauses are defined, it will return the existing relationships unchanged.
   """
-  @spec on_compilation!() :: :ok | no_return()
-  def on_compilation! do
-    unless Code.can_await_module_compilation?() do
-      prune!()
-      validate!()
-      build_type_relations!()
-    end
+  @spec relationship(Context.t() | Ast.t(), Context.t() | Ast.t(), [{atom(), Context.t() | Ast.t(), Context.t() | Ast.t()}]) :: [{atom(), Context.t() | Ast.t(), Context.t() | Ast.t()}]
+  def relationship(it, peer, existing) do
+    cond do
+      is_struct(it, Context) && length(it.ast.relationships) > 0 ->
+        it.ast.relationships
 
-    :ok
+      is_struct(it, Ast) && length(it.relationships) > 0 ->
+        it.relationships
+
+      (
+        context = Apix.Schema.get_schema(it)
+        context && length(context.ast.relationships) > 0
+      ) ->
+        context.ast.relationships
+
+      true ->
+        [{__MODULE__, :default_relationship, []}]
+    end
+    |> Enum.flat_map(fn {m, f, a} ->
+      try do
+        apply(m, f, [it, peer, existing | a])
+      rescue
+        FunctionClauseError ->
+          existing
+      end
+    end)
+    |> Enum.filter(&filter_underscore/1)
+  end
+
+  @doc false
+  def default_relationship(_it, _peer, existing), do: existing
+
+  defp filter_underscore({_type, %Ast{module: nil, schema: nil, args: []} = _left, _right} = _relation), do: false
+  defp filter_underscore({_type, %Context{module: nil, schema: nil, params: []} = _left, _right} = _relation), do: false
+  defp filter_underscore({_type, _left, %Ast{module: nil, schema: nil, args: []} = _right} = _relation), do: false
+  defp filter_underscore({_type, _left, %Context{module: nil, schema: nil, params: []} = _right} = _relation), do: false
+  defp filter_underscore(_relation), do: true
+
+  @doc """
+  Converts `t:Context.t/0` or `t:Ast.t/0` to `:digraph.vertex()`.
+  """
+  @spec to_vertex(Context.t() | Ast.t()) :: :digraph.vertex()
+  def to_vertex(context_or_ast) when is_struct(context_or_ast, Context) or is_struct(context_or_ast, Ast) do
+    context_or_ast
+    |> Context.normalize_ast!()
+    |> Apix.Schema.hash()
   end
 
   @doc """
@@ -391,5 +399,106 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       Graph.add_edge({sup_ast_v, sub_ast_v, :supertype}, sup_ast_v, sub_ast_v, :supertype)
       Graph.add_edge({sub_ast_v, sub_ctx_v, :supertype}, sub_ast_v, sub_ctx_v, :supertype)
     end)
+  end
+
+  @impl Extension
+  def manifest, do: @manifest
+
+  @impl Extension
+  def expression!(_context, {:relate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+    quote do
+      def __apix_schema_relate__(unquote(arg1), unquote(arg2)) when unquote(guard), do: unquote(block)
+    end
+    |> Code.eval_quoted([], env)
+
+    struct(schema_ast, relates: Enum.uniq([{env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
+  end
+
+  def expression!(_context, {:relate, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+    quote do
+      def __apix_schema_relate__(unquote(arg1), unquote(arg2)), do: unquote(block)
+    end
+    |> Code.eval_quoted([], env)
+
+    struct(schema_ast, relates: Enum.uniq([{env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
+  end
+
+  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function_name]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
+    {module, _binding} = Code.eval_quoted(module, [], env)
+
+    struct(schema_ast, relates: [{module, function_name, []} | schema_ast.relates])
+  end
+
+  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{function_name, _, _}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
+    struct(schema_ast, relates: [{env.module, function_name, []} | schema_ast.relates])
+  end
+
+  def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a] = mfa}]} = _elixir_ast, schema_ast, env, _literal?) do
+    {mfa, _binding} = Code.eval_quoted(mfa, [], env)
+
+    struct(schema_ast, relates: [mfa | schema_ast.relates])
+  end
+
+  def expression!(_context, {:relationship, _, [arg1, arg2, {:when, _, [arg3, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+    quote do
+      def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)) when unquote(guard), do: unquote(block)
+    end
+    |> Code.eval_quoted([], env)
+
+    struct(schema_ast, relationships: Enum.uniq([{env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
+  end
+
+  def expression!(_context, {:relationship, _, [arg1, arg2, arg3, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+    quote do
+      def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)), do: unquote(block)
+    end
+    |> Code.eval_quoted([], env)
+
+    struct(schema_ast, relationships: Enum.uniq([{env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
+  end
+
+  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function_name]}, _, []}, 3]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
+    {module, _binding} = Code.eval_quoted(module, [], env)
+
+    struct(schema_ast, relationships: [{module, function_name, []} | schema_ast.relationships])
+  end
+
+  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{function_name, _, _}, 3]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
+    struct(schema_ast, relationships: [{env.module, function_name, []} | schema_ast.relationships])
+  end
+
+  def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a] = mfa}]} = _elixir_ast, schema_ast, env, _literal?) do
+    {mfa, _binding} = Code.eval_quoted(mfa, [], env)
+
+    struct(schema_ast, relationships: [mfa | schema_ast.relationships])
+  end
+
+  def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
+
+  @impl Extension
+  def validate_ast!(context) do
+    track!(context)
+    on_compilation!()
+
+    context
+  end
+
+  @doc """
+  Runs all the `#{inspect __MODULE__}` functions that are intended to be run
+  after compilation is finished to avoid corrupting `#{inspect __MODULE__}` state.
+
+  - `prune!/0`
+  - `validate!/0`
+  - `build_type_relations!/0`
+  """
+  @spec on_compilation!() :: :ok | no_return()
+  def on_compilation! do
+    unless Code.can_await_module_compilation?() do
+      prune!()
+      validate!()
+      build_type_relations!()
+    end
+
+    :ok
   end
 end

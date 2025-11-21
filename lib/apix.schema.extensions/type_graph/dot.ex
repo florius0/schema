@@ -63,8 +63,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Dot do
       vertices
       |> Map.to_list()
       |> Enum.sort_by(fn {v, _t} -> Graph.in_degree(v) end, :desc)
-      |> Enum.map(fn {_v, t} -> t end)
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", fn {_v, t} -> t end)
 
     edges_dot = Graph.edges()
 

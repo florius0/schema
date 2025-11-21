@@ -4,6 +4,12 @@ defmodule Apix.Schema.Extensions.Core.Not do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
+  @moduledoc """
+  Schema for `not` operation.
+
+  See #{inspect Apix.Schema.Extensions.Core}
+  """
+
   schema t: _, params: [:schema] do
     validate not valid?(it, schema)
 

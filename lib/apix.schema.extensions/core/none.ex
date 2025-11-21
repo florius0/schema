@@ -11,6 +11,12 @@ defmodule Apix.Schema.Extensions.Core.None do
   @boolean_schemas Core.boolean_schemas()
   @it_ast %Ast{module: __MODULE__, schema: :t, args: []} |> Meta.maybe_put_in(env: __ENV__, generated_by: Core.manifest())
 
+  @moduledoc """
+  Schema for no value.
+
+  See #{inspect Apix.Schema.Extensions.Core}
+  """
+
   schema t: _ do
     validate false
 

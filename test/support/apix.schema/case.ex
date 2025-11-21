@@ -3,6 +3,8 @@ defmodule Apix.Schema.Case do
 
   alias Apix.Schema.Extensions.TypeGraph.Graph
 
+  @moduledoc false
+
   setup do
     Graph.vertices()
     |> Graph.del_vertices()

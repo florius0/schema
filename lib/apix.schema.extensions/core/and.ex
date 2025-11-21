@@ -4,6 +4,12 @@ defmodule Apix.Schema.Extensions.Core.And do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
+  @moduledoc """
+  Schema for `and` operation.
+
+  See #{inspect Apix.Schema.Extensions.Core}
+  """
+
   schema t: _, params: [:schema1, :schema2] do
     validate valid?(it, schema1) and valid?(it, schema2)
 

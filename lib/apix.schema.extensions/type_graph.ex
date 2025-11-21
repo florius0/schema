@@ -13,6 +13,15 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     module: __MODULE__
   }
 
+  @type relation() ::
+          :subtype
+          | :supertype
+          | :not_subtype
+          | :not_supertype
+          | :references
+          | :referenced
+          | atom()
+
   @moduledoc """
   Type graph extension for `#{inspect Apix.Schema}`.
   Provides high-level interface for working with graph of types information.
@@ -75,7 +84,8 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - Known and unknown types are not subtypes.
   - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
   """
-  def is_subtype?(subtype, supertype) do
+  @spec subtype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
+  def subtype?(subtype, supertype) do
     subtype = to_vertex(subtype)
     supertype = to_vertex(supertype)
 
@@ -89,7 +99,8 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - Known and unknown types are not supertypes.
   - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
   """
-  def is_supertype?(supertype, subtype) do
+  @spec supertype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
+  def supertype?(supertype, subtype) do
     supertype = to_vertex(supertype)
     subtype = to_vertex(subtype)
 
@@ -101,6 +112,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   Note that this function knows nothing about the semantics of the graph, it just finds a path matching the `predicate`.
   """
+  @spec path_exists?(Context.t() | Ast.t(), Context.t() | Ast.t(), (relation() -> as_boolean(any()))) :: boolean()
   def path_exists?(from, to, predicate) do
     from = to_vertex(from)
     to = to_vertex(to)

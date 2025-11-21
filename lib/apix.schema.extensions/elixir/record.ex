@@ -2,6 +2,10 @@ defmodule Apix.Schema.Extensions.Elixir.Record do
   use Apix.Schema
   require Record
 
+  @moduledoc """
+  Schema for `#{inspect Record}`
+  """
+
   schema t: Tuple.t() do
     validate is_record(it)
   end

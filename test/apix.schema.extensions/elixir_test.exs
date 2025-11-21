@@ -837,50 +837,52 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    module: Apix.Schema.Extensions.Elixir.Tuple,
                    schema: :t,
                    args: [
-                     item: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: nil,
-                       doc: nil,
-                       examples: [],
-                       validators: [],
-                       flags: [],
-                       parameter?: false
-                     },
-                     item: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: nil,
-                       doc: nil,
-                       examples: [],
-                       validators: [],
-                       flags: [flag: :a],
-                       parameter?: false
-                     },
-                     item: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: "Third element",
-                       doc: "Third element of the tuple",
-                       examples: [42],
-                       validators: [],
-                       flags: [],
-                       parameter?: false
-                     },
-                     item: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: "Fourth element",
-                       doc: "Fourth element of the tuple",
-                       examples: [42],
-                       validators: [],
-                       flags: [flag: :a],
-                       parameter?: false
-                     }
+                     [
+                       item: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: nil,
+                         doc: nil,
+                         examples: [],
+                         validators: [],
+                         flags: [],
+                         parameter?: false
+                       },
+                       item: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: nil,
+                         doc: nil,
+                         examples: [],
+                         validators: [],
+                         flags: [flag: :a],
+                         parameter?: false
+                       },
+                       item: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: "Third element",
+                         doc: "Third element of the tuple",
+                         examples: [42],
+                         validators: [],
+                         flags: [],
+                         parameter?: false
+                       },
+                       item: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: "Fourth element",
+                         doc: "Fourth element of the tuple",
+                         examples: [42],
+                         validators: [],
+                         flags: [flag: :a],
+                         parameter?: false
+                       }
+                     ]
                    ],
                    shortdoc: nil,
                    doc: nil,
@@ -928,50 +930,52 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    module: Apix.Schema.Extensions.Elixir.Tuple,
                    schema: :t,
                    args: [
-                     rest: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: nil,
-                       doc: nil,
-                       examples: [],
-                       validators: [],
-                       flags: [],
-                       parameter?: false
-                     },
-                     rest: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: nil,
-                       doc: nil,
-                       examples: [],
-                       validators: [],
-                       flags: [flag: :a],
-                       parameter?: false
-                     },
-                     rest: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: "Third element",
-                       doc: "Third element of the tuple",
-                       examples: [42],
-                       validators: [],
-                       flags: [],
-                       parameter?: false
-                     },
-                     rest: %Apix.Schema.Ast{
-                       module: Apix.Schema.Extensions.Core.Any,
-                       schema: :t,
-                       args: [],
-                       shortdoc: "Fourth element",
-                       doc: "Fourth element of the tuple",
-                       examples: [42],
-                       validators: [],
-                       flags: [flag: :a],
-                       parameter?: false
-                     }
+                     [
+                       rest: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: nil,
+                         doc: nil,
+                         examples: [],
+                         validators: [],
+                         flags: [],
+                         parameter?: false
+                       },
+                       rest: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: nil,
+                         doc: nil,
+                         examples: [],
+                         validators: [],
+                         flags: [flag: :a],
+                         parameter?: false
+                       },
+                       rest: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: "Third element",
+                         doc: "Third element of the tuple",
+                         examples: [42],
+                         validators: [],
+                         flags: [],
+                         parameter?: false
+                       },
+                       rest: %Apix.Schema.Ast{
+                         module: Apix.Schema.Extensions.Core.Any,
+                         schema: :t,
+                         args: [],
+                         shortdoc: "Fourth element",
+                         doc: "Fourth element of the tuple",
+                         examples: [42],
+                         validators: [],
+                         flags: [flag: :a],
+                         parameter?: false
+                       }
+                     ]
                    ],
                    shortdoc: nil,
                    doc: nil,
@@ -1045,150 +1049,152 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    module: Apix.Schema.Extensions.Elixir.Map,
                    schema: :t,
                    args: [
-                     field: {
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
+                     [
+                       field: {
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         },
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         }
                        },
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
-                       }
-                     },
-                     field: {
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
+                       field: {
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         },
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [flag: :a],
+                           parameter?: false
+                         }
                        },
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [flag: :a],
-                         parameter?: false
-                       }
-                     },
-                     field: {
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
+                       field: {
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         },
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         }
                        },
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
-                       }
-                     },
-                     field: {
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: "Key",
-                         doc: "Key of the field",
-                         examples: [42],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
+                       field: {
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: "Key",
+                           doc: "Key of the field",
+                           examples: [42],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         },
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: "Value",
+                           doc: "Value of the field",
+                           examples: [42],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         }
                        },
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: "Value",
-                         doc: "Value of the field",
-                         examples: [42],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
-                       }
-                     },
-                     field: {
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
+                       field: {
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         },
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: nil,
+                           doc: nil,
+                           examples: [],
+                           validators: [],
+                           flags: [flag: :a],
+                           parameter?: false
+                         }
                        },
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: nil,
-                         doc: nil,
-                         examples: [],
-                         validators: [],
-                         flags: [flag: :a],
-                         parameter?: false
+                       field: {
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: "Key",
+                           doc: "Key of the field",
+                           examples: [42],
+                           validators: [],
+                           flags: [],
+                           parameter?: false
+                         },
+                         %Apix.Schema.Ast{
+                           module: Apix.Schema.Extensions.Core.Any,
+                           schema: :t,
+                           args: [],
+                           shortdoc: "Value",
+                           doc: "Value of the field",
+                           examples: [42],
+                           validators: [],
+                           flags: [flag: :a],
+                           parameter?: false
+                         }
                        }
-                     },
-                     field: {
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: "Key",
-                         doc: "Key of the field",
-                         examples: [42],
-                         validators: [],
-                         flags: [],
-                         parameter?: false
-                       },
-                       %Apix.Schema.Ast{
-                         module: Apix.Schema.Extensions.Core.Any,
-                         schema: :t,
-                         args: [],
-                         shortdoc: "Value",
-                         doc: "Value of the field",
-                         examples: [42],
-                         validators: [],
-                         flags: [flag: :a],
-                         parameter?: false
-                       }
-                     }
+                     ]
                    ],
                    shortdoc: nil,
                    doc: nil,

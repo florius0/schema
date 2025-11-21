@@ -167,13 +167,13 @@ defmodule Apix.Schema.Extensions.Elixir do
   def expression!(context, {:item, _, elixir_ast}, schema_ast, env, _literal?) do
     type = inner_expression!(context, elixir_ast, %Ast{}, env)
 
-    struct(schema_ast, args: schema_ast.args ++ [item: type])
+    Ast.add_keyword_args(schema_ast, item: type)
   end
 
   def expression!(context, {:rest, _, elixir_ast}, schema_ast, env, _literal?) do
     type = inner_expression!(context, elixir_ast, %Ast{}, env)
 
-    struct(schema_ast, args: schema_ast.args ++ [rest: type])
+    Ast.add_keyword_args(schema_ast, rest: type)
   end
 
   def expression!(context, {:field, _, elixir_ast}, schema_ast, env, _literal?) do
@@ -202,7 +202,7 @@ defmodule Apix.Schema.Extensions.Elixir do
         }
       end
 
-    struct(schema_ast, args: schema_ast.args ++ [field: {key_type, value_type}])
+    Ast.add_keyword_args(schema_ast, field: {key_type, value_type})
   end
 
   def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false

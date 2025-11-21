@@ -121,7 +121,6 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - `{:supertype, it, it}` – `it` is a supertype of itself which is always true.
   """
   @spec relate(Context.t() | Ast.t(), Context.t() | Ast.t()) :: [{atom(), Context.t() | Ast.t(), Context.t() | Ast.t()}]
-
   def relate(it, to) do
     cond do
       is_struct(it, Context) && length(it.ast.relates) > 0 ->
@@ -344,7 +343,17 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     |> Ast.traverse(
       {[context_or_ast], relate(context_or_ast, context_or_ast)},
       fn
-        ast, {[parent | _rest] = stack, acc} -> {ast, {[ast | stack], relate(parent, ast) ++ relate(ast, Apix.Schema.get_schema(ast)) ++ acc}}
+        ast, {[parent | _rest] = stack, acc} ->
+          context = Apix.Schema.get_schema(ast)
+
+          relate1 = relate(parent, ast)
+
+          relate2 =
+            if context,
+              do: relate(ast, context),
+              else: []
+
+          {ast, {[ast | stack], relate1 ++ relate2 ++ acc}}
       end,
       fn
         ast, {[ast | stack], acc} -> {ast, {stack, acc}}

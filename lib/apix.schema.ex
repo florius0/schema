@@ -129,7 +129,7 @@ defmodule Apix.Schema do
   def get_schema(module, schema, arity), do: get_schemas(module)[{module, schema, arity}]
 
   @doc """
-  Returns `t:msa/0` for given `t:#{inspect Ast}.t/0` or `t:#{inspect Context}/0`
+  Returns `t:msa/0` for given `t:#{inspect Ast}.t/0` or `t:#{inspect Context}.t/0`
   """
   @spec msa(Context.t() | Ast.t()) :: msa()
   def msa(%Context{module: m, schema: s, params: p}), do: {m, s, length(p)}

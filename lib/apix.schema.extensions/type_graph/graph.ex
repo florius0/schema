@@ -100,7 +100,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
 
   `predicate` can have arity 1, 3, or 4:
     - `fn label -> boolean end`
-    - `fn from, to` -> boolean end`
+    - `fn from, to -> boolean end`
     - `fn from, to, label -> boolean end`
     - `fn edge, from, to, label -> boolean end`
 

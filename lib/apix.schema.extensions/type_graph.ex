@@ -64,7 +64,6 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       - `relationship &Module.function/3` – uses 3-arity remote function capture
       - `relationship &function/3` – uses 3-arity local function capture
       - `relationship {Module, :function, args}` – uses MFA tuple to reference function. `args` will be appended to `[it, peer, existing]` when calling the function.
-  ```
   """
 
   @behaviour Extension

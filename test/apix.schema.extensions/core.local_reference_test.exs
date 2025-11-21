@@ -9,8 +9,8 @@ defmodule Apix.Schema.Extensions.Core.LocalReferenceTest do
         schema a: t(Any.t())
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1,
                    schema: :t,
@@ -41,7 +41,7 @@ defmodule Apix.Schema.Extensions.Core.LocalReferenceTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema1.__apix_schemas__()
+             } = TestSchema1.__apix_schemas__()
     end
   end
 end

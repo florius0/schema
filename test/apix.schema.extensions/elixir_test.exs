@@ -10,8 +10,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema1, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Atom,
                    schema: :t,
@@ -30,7 +30,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema1.__apix_schemas__()
+             } = TestSchema1.__apix_schemas__()
     end
 
     test "delegates | String.t -> Apix.Schema.Extensions.Elixir.String.t" do
@@ -41,8 +41,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema2, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.String,
                    schema: :t,
@@ -61,7 +61,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema2.__apix_schemas__()
+             } = TestSchema2.__apix_schemas__()
     end
 
     test "delegates | Integer.t -> Apix.Schema.Extensions.Elixir.Integer.t" do
@@ -72,8 +72,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema3, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Integer,
                    schema: :t,
@@ -92,7 +92,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema3.__apix_schemas__()
+             } = TestSchema3.__apix_schemas__()
     end
 
     test "delegates | Float.t -> Apix.Schema.Extensions.Elixir.Float.t" do
@@ -103,8 +103,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema4, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Float,
                    schema: :t,
@@ -123,7 +123,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema4.__apix_schemas__()
+             } = TestSchema4.__apix_schemas__()
     end
 
     test "delegates | Number.t -> Apix.Schema.Extensions.Elixir.Number.t" do
@@ -134,8 +134,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema5, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Number,
                    schema: :t,
@@ -147,14 +147,14 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.ElixirTest.TestSchema4,
+                 module: Apix.Schema.Extensions.ElixirTest.TestSchema5,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             ] = TestSchema4.__apix_schemas__()
+             } = TestSchema5.__apix_schemas__()
     end
 
     test "delegates | Tuple.t -> Apix.Schema.Extensions.Elixir.Tuple.t" do
@@ -165,8 +165,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema6, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Tuple,
                    schema: :t,
@@ -185,7 +185,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema6.__apix_schemas__()
+             } = TestSchema6.__apix_schemas__()
     end
 
     test "delegates | List.t -> Apix.Schema.Extensions.Elixir.List.t" do
@@ -196,8 +196,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema7, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.List,
                    schema: :t,
@@ -216,7 +216,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema7.__apix_schemas__()
+             } = TestSchema7.__apix_schemas__()
     end
 
     test "delegates | Map.t -> Apix.Schema.Extensions.Elixir.Map.t" do
@@ -227,8 +227,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema8, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Map,
                    schema: :t,
@@ -247,7 +247,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema8.__apix_schemas__()
+             } = TestSchema8.__apix_schemas__()
     end
 
     test "delegates | Struct.t -> Apix.Schema.Extensions.Elixir.Struct.t" do
@@ -258,8 +258,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema9, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Struct,
                    schema: :t,
@@ -278,7 +278,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema9.__apix_schemas__()
+             } = TestSchema9.__apix_schemas__()
     end
 
     test "delegates | Record.t -> Apix.Schema.Extensions.Elixir.Record.t" do
@@ -289,8 +289,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema10, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Record,
                    schema: :t,
@@ -309,7 +309,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema10.__apix_schemas__()
+             } = TestSchema10.__apix_schemas__()
     end
 
     test "delegates | MapSet.t -> Apix.Schema.Extensions.Elixir.MapSet.t" do
@@ -320,8 +320,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema11, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.MapSet,
                    schema: :t,
@@ -340,7 +340,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema11.__apix_schemas__()
+             } = TestSchema11.__apix_schemas__()
     end
 
     test "delegates | Range.t -> Apix.Schema.Extensions.Elixir.Range.t" do
@@ -351,8 +351,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema12, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Range,
                    schema: :t,
@@ -371,7 +371,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema12.__apix_schemas__()
+             } = TestSchema12.__apix_schemas__()
     end
 
     test "delegates | Function.t -> Apix.Schema.Extensions.Elixir.Function.t" do
@@ -382,8 +382,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema13, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Function,
                    schema: :t,
@@ -402,7 +402,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema13.__apix_schemas__()
+             } = TestSchema13.__apix_schemas__()
     end
 
     test "delegates | Module.t -> Apix.Schema.Extensions.Elixir.Module.t" do
@@ -413,8 +413,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema14, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Module,
                    schema: :t,
@@ -433,7 +433,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema14.__apix_schemas__()
+             } = TestSchema14.__apix_schemas__()
     end
 
     test "delegates | PID.t -> Apix.Schema.Extensions.Elixir.PID.t" do
@@ -444,8 +444,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema15, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.PID,
                    schema: :t,
@@ -464,7 +464,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema15.__apix_schemas__()
+             } = TestSchema15.__apix_schemas__()
     end
 
     test "delegates | Port.t -> Apix.Schema.Extensions.Elixir.Port.t" do
@@ -475,8 +475,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema16, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Port,
                    schema: :t,
@@ -495,7 +495,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema16.__apix_schemas__()
+             } = TestSchema16.__apix_schemas__()
     end
 
     test "delegates | Reference.t -> Apix.Schema.Extensions.Elixir.Reference.t" do
@@ -506,8 +506,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema17, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Reference,
                    schema: :t,
@@ -526,7 +526,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema17.__apix_schemas__()
+             } = TestSchema17.__apix_schemas__()
     end
 
     test "delegates | Date.t -> Apix.Schema.Extensions.Elixir.Date.t" do
@@ -537,8 +537,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema18, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Date,
                    schema: :t,
@@ -557,7 +557,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema18.__apix_schemas__()
+             } = TestSchema18.__apix_schemas__()
     end
 
     test "delegates | Date.Range.t -> Apix.Schema.Extensions.Elixir.Date.Range.t" do
@@ -568,8 +568,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema19, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Date.Range,
                    schema: :t,
@@ -588,7 +588,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema19.__apix_schemas__()
+             } = TestSchema19.__apix_schemas__()
     end
 
     test "delegates | Time.t -> Apix.Schema.Extensions.Elixir.Time.t" do
@@ -599,8 +599,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema20, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Time,
                    schema: :t,
@@ -619,7 +619,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema20.__apix_schemas__()
+             } = TestSchema20.__apix_schemas__()
     end
 
     test "delegates | DateTime.t -> Apix.Schema.Extensions.Elixir.DateTime.t" do
@@ -630,8 +630,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema21, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.DateTime,
                    schema: :t,
@@ -650,7 +650,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema21.__apix_schemas__()
+             } = TestSchema21.__apix_schemas__()
     end
 
     test "delegates | NaiveDateTime.t -> Apix.Schema.Extensions.Elixir.NaiveDateTime.t" do
@@ -661,8 +661,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema22, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.NaiveDateTime,
                    schema: :t,
@@ -681,7 +681,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema22.__apix_schemas__()
+             } = TestSchema22.__apix_schemas__()
     end
 
     test "delegates | Regex.t -> Apix.Schema.Extensions.Elixir.Regex.t" do
@@ -692,8 +692,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema23, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Regex,
                    schema: :t,
@@ -712,7 +712,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema23.__apix_schemas__()
+             } = TestSchema23.__apix_schemas__()
     end
 
     test "delegates | URI.t -> Apix.Schema.Extensions.Elixir.URI.t" do
@@ -723,8 +723,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema24, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.URI,
                    schema: :t,
@@ -743,7 +743,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema24.__apix_schemas__()
+             } = TestSchema24.__apix_schemas__()
     end
 
     test "delegates | Version.t -> Apix.Schema.Extensions.Elixir.Version.t" do
@@ -754,8 +754,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema25, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Version,
                    schema: :t,
@@ -774,7 +774,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema25.__apix_schemas__()
+             } = TestSchema25.__apix_schemas__()
     end
 
     test "delegates | Version.Requirement.t -> Apix.Schema.Extensions.Elixir.Version.Requirement." do
@@ -785,8 +785,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema26, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Version.Requirement,
                    schema: :t,
@@ -805,7 +805,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema26.__apix_schemas__()
+             } = TestSchema26.__apix_schemas__()
     end
 
     test "expressions | item" do
@@ -831,8 +831,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema27, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Tuple,
                    schema: :t,
@@ -896,7 +896,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema27.__apix_schemas__()
+             } = TestSchema27.__apix_schemas__()
     end
 
     test "expressions | rest" do
@@ -922,8 +922,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema28, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Tuple,
                    schema: :t,
@@ -987,7 +987,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema28.__apix_schemas__()
+             } = TestSchema28.__apix_schemas__()
     end
 
     test "expressions | field" do
@@ -1039,8 +1039,8 @@ defmodule Apix.Schema.Extensions.ElixirTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.Schema.Extensions.ElixirTest.TestSchema29, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Elixir.Map,
                    schema: :t,
@@ -1204,7 +1204,7 @@ defmodule Apix.Schema.Extensions.ElixirTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema29.__apix_schemas__()
+             } = TestSchema29.__apix_schemas__()
     end
   end
 end

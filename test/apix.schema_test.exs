@@ -8,6 +8,7 @@ defmodule Apix.SchemaTest do
 
         assert %Apix.Schema.Context{
                  extensions: [
+                   %Apix.Schema.Extension{module: Apix.Schema.Extensions.TypeGraph},
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core},
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Elixir},
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core.LocalReference}
@@ -39,8 +40,8 @@ defmodule Apix.SchemaTest do
         end
       end
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.SchemaTest.TestSchema3, :a, 4} => %Apix.Schema.Context{
                  module: Apix.SchemaTest.TestSchema3,
                  schema: :a,
                  params: [
@@ -79,14 +80,9 @@ defmodule Apix.SchemaTest do
                  ],
                  warnings: [],
                  errors: [],
-                 flags: [],
-                 extensions: [
-                   %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core},
-                   %Apix.Schema.Extension{module: Apix.Schema.Extensions.Elixir},
-                   %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core.LocalReference}
-                 ]
+                 flags: []
                }
-             ] = TestSchema3.__apix_schemas__()
+             } = TestSchema3.__apix_schemas__()
     end
 
     test "schema/2 | includes metadata" do
@@ -99,12 +95,12 @@ defmodule Apix.SchemaTest do
 
       file = __ENV__.file
 
-      assert [
-               %Apix.Schema.Context{
+      assert %{
+               {Apix.SchemaTest.TestSchema4, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    meta: %Apix.Schema.Ast.Meta{
                      file: ^file,
-                     line: 96,
+                     line: 92,
                      module: Apix.SchemaTest.TestSchema4,
                      generated_by: %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core}
                    }
@@ -116,7 +112,7 @@ defmodule Apix.SchemaTest do
                  errors: [],
                  flags: []
                }
-             ] = TestSchema4.__apix_schemas__()
+             } = TestSchema4.__apix_schemas__()
     end
   end
 end

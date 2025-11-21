@@ -211,10 +211,12 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
     end
   end
 
+  # sobelow_skip ["Misc.BinToTerm"]
   defp do_load(_state, path \\ Mix.Project.compile_path()) do
     with path <- Path.join(path, @filename),
          :ok <- path |> Path.dirname() |> File.mkdir_p(),
          {:ok, etf} <- File.read(path),
+         # Trusted binary, sobelow false positive
          %{format: @format} = loaded <- :erlang.binary_to_term(etf),
          digraph <- :digraph.new(),
          loaded <-

@@ -33,8 +33,23 @@ defimpl Inspect, for: Ast do
   end
 
   def inspect(%Ast{} = ast, opts) do
-    ast
-    |> Ast.postwalk(&inspect_default(&1, opts))
+    ast = maybe_rewrite_delegate(ast, opts)
+
+    "#{Macro.inspect_atom(:literal, ast.module)}"
+    |> color_doc(:atom, opts)
+    |> concat(".#{Macro.inspect_atom(:remote_call, ast.schema)}" |> color_doc(:call, opts))
+    |> concat(
+      container_doc(
+        color_doc("(", :call, opts),
+        ast.args,
+        color_doc(")", :call, opts),
+        opts,
+        &inspect/2,
+        separator: color_doc(",", :list, opts),
+        break: :maybe
+      )
+    )
+    |> group()
     |> mark(Ast, opts)
     |> group()
     |> enable(ast, opts)
@@ -42,27 +57,23 @@ defimpl Inspect, for: Ast do
 
   def inspect(doc, _opts) when is_doc(doc), do: doc
 
-  def inspect(literal, opts), do: Inspect.inspect(literal, opts) |> group()
-
-  defp inspect_default(ast, opts) do
-    ast = maybe_rewrite_delegate(ast, opts)
-
-    "#{Macro.inspect_atom(:literal, ast.module)}"
-    |> color_doc(:atom, opts)
-    |> concat(".#{Macro.inspect_atom(:remote_call, ast.schema)}(" |> color_doc(:call, opts))
-    |> concat(
-      container_doc(
-        empty(),
-        ast.args,
-        empty(),
-        opts,
-        &inspect/2,
-        separator: color_doc(",", :list, opts)
-      )
+  def inspect([{_k, _v} | _rest] = keyword, opts) do
+    keyword
+    |> Enum.map(fn {k, v} ->
+      :key
+      |> Macro.inspect_atom(k)
+      |> color_doc(:atom, opts)
+      |> space(to_doc(v, opts))
+    end)
+    |> Enum.intersperse(
+      color_doc(",", :list, opts)
+      |> concat(line())
     )
-    |> concat(color_doc(")", :call, opts))
+    |> Enum.reduce(empty(), &concat/2)
     |> group()
   end
+
+  def inspect(literal, opts), do: Inspect.inspect(literal, opts) |> group()
 
   defp maybe_rewrite_delegate(%Ast{meta: %Meta{generated_by: %Extension{}}} = ast, opts) do
     rewrite? = Keyword.get(opts.custom_options, :apix_schema_rewrite_delegates?, true)

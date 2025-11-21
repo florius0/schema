@@ -122,7 +122,7 @@ defmodule Apix.Schema.Ast do
   end
 
   @doc """
-  Structurally compares `t:#{inspect Ast}.t/0`'s.
+  Structurally compares `t:#{inspect __MODULE__}.t/0`'s.
 
   - If both Asts match, returns `true`.
   - If both Asts are have the same `module`, `schema` and their args are structurally equal, returns true
@@ -145,4 +145,41 @@ defmodule Apix.Schema.Ast do
   @spec hash(t()) :: integer()
   def hash(%__MODULE__{} = ast), do: :erlang.phash2({ast.module, ast.schema, Enum.map(ast.args, &hash/1)})
   def hash(other), do: :erlang.phash2(other)
+
+  @doc """
+  Maps `fun` to `t:#{inspect __MODULE__}.t/0`'s keyword args
+  """
+  @spec map_keyword_args(t(), ([any()] -> [any()])) :: t()
+  def map_keyword_args(%__MODULE__{} = ast, fun) do
+    {last, rest} =
+      ast.args
+      |> Enum.reverse()
+      |> case do
+        [last | rest] ->
+          {last, rest}
+
+        [] ->
+          {[], []}
+      end
+
+    struct(ast, args: Enum.reverse([fun.(last) | rest]))
+  end
+
+  @doc """
+  Puts `keyword` to `t:#{inspect __MODULE__}.t/0`'s keyword args
+  """
+  @spec put_keyword_args(t(), keyword()) :: t()
+  def put_keyword_args(%__MODULE__{} = ast, keyword), do: map_keyword_args(ast, fn _ -> keyword end)
+
+  @doc """
+  Adds `keyword` to `t:#{inspect __MODULE__}.t/0`'s keyword args
+  """
+  @spec add_keyword_args(t(), keyword()) :: t()
+  def add_keyword_args(%__MODULE__{} = ast, keyword), do: map_keyword_args(ast, &(&1 ++ keyword))
+
+  @doc """
+  Removes `keyword` to `t:#{inspect __MODULE__}.t/0`'s keyword args
+  """
+  @spec remove_keyword_args(t(), keyword()) :: t()
+  def remove_keyword_args(%__MODULE__{} = ast, keyword), do: map_keyword_args(ast, &(&1 -- keyword))
 end

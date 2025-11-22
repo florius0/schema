@@ -139,7 +139,7 @@ defmodule Apix.Schema.Extension do
   """
   @spec normalize_ast!(t(), Context.t(), Ast.t()) :: Ast.t()
   def normalize_ast!(%__MODULE__{module: m}, context, ast) do
-    if function_exported?(m, :normalize_ast!, 3),
+    if function_exported?(m, :normalize_ast!, 2),
       do: m.normalize_ast!(context, ast),
       else: ast
   end

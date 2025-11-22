@@ -42,12 +42,9 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   """
   @spec ensure!() :: :ok
   def ensure!() do
-    __MODULE__
-    |> GenServer.start([], name: __MODULE__)
-    |> case do
-      {:ok, _pid} ->
-        :ok
-
+    with {:ok, _pid} <- GenServer.start(__MODULE__, [], name: __MODULE__) do
+      :ok
+    else
       {:error, {:already_started, _pid}} ->
         :ok
     end
@@ -82,16 +79,16 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    __MODULE__
-    |> GenServer.start([opts], name: __MODULE__)
-    |> case do
+    with {:ok, pid} <- GenServer.start(__MODULE__, [opts], name: __MODULE__) do
+      {:ok, pid}
+    else
       {:error, {:already_started, pid}} ->
         Process.link(pid)
 
         {:ok, pid}
 
-      x ->
-        x
+      error ->
+        error
     end
   end
 
@@ -143,12 +140,9 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   end
 
   def handle_call({:load, path}, _from, state) do
-    state
-    |> do_load(path)
-    |> case do
-      {:ok, state} ->
-        {:reply, :ok, state}
-
+    with {:ok, state} <- do_dump(state, path) do
+      {:reply, :ok, state}
+    else
       error ->
         {:reply, error, state}
     end

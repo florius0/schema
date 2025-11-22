@@ -10,6 +10,7 @@ defmodule Apix.Schema.MixProject do
       deps: deps(),
       dialyzer: dialyzer(),
       docs: docs(),
+      test_coverage: test_coverage(),
       aliases: aliases()
     ]
   end
@@ -75,6 +76,15 @@ defmodule Apix.Schema.MixProject do
       nest_modules_by_prefix: [
         Apix.Schema,
         Apix.Schema.Extensions
+      ]
+    ]
+  end
+
+  defp test_coverage do
+    [
+      ignore_modules: [
+        Apix.Schema.Extensions.TypeGraph.Definition,
+        Apix.Schema.Extensions.TypeGraph.Dot
       ]
     ]
   end

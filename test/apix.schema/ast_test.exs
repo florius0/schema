@@ -91,5 +91,49 @@ defmodule Apix.Schema.AstTest do
                ]
              } = Ast.traverse(ast, [], fn a, acc -> {a, [{:pre, a} | acc]} end, fn a, acc -> {a, [{:post, a} | acc]} end)
     end
+
+    test "equals?/2" do
+      ast = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
+      other = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [], flags: [:other]}
+      different = %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []}
+
+      assert Ast.equals?(ast, ast)
+      assert Ast.equals?(ast, other)
+      refute Ast.equals?(ast, different)
+    end
+
+    test "hash/1" do
+      ast = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
+      other = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [], flags: [:other]}
+      different = %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []}
+
+      assert Ast.hash(ast) == Ast.hash(ast)
+      assert Ast.hash(ast) == Ast.hash(other)
+      refute Ast.hash(ast) == Ast.hash(different)
+    end
+
+    test "map_keyword_args/2" do
+      assert %Ast{args: [[], [:baz]]} =
+               %Ast{args: [[], [foo: :bar]]}
+               |> Ast.map_keyword_args(fn _ -> [:baz] end)
+    end
+
+    test "put_keyword_args/2" do
+      assert %Ast{args: [[], [foo: :baz]]} =
+               %Ast{args: [[], [foo: :bar]]}
+               |> Ast.put_keyword_args(foo: :baz)
+    end
+
+    test "add_keyword_args/2" do
+      assert %Ast{args: [[], [foo: :bar, baz: :qux]]} =
+               %Ast{args: [[], [foo: :bar]]}
+               |> Ast.add_keyword_args(baz: :qux)
+    end
+
+    test "remove_keyword_args/2" do
+      assert %Ast{args: [[], []]} =
+               %Ast{args: [[], [foo: :bar]]}
+               |> Ast.remove_keyword_args(foo: :bar)
+    end
   end
 end

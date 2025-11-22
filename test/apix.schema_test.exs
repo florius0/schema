@@ -1,6 +1,9 @@
 defmodule Apix.SchemaTest do
   use Apix.Schema.Case
 
+  alias Apix.Schema.Ast
+  alias Apix.Schema.Context
+
   describe "#{inspect Apix.Schema}" do
     test "__using__/1 | allows for inline extension passing" do
       defmodule TestSchema1 do
@@ -100,7 +103,7 @@ defmodule Apix.SchemaTest do
                  ast: %Apix.Schema.Ast{
                    meta: %Apix.Schema.Ast.Meta{
                      file: ^file,
-                     line: 92,
+                     line: 95,
                      module: Apix.SchemaTest.TestSchema4,
                      generated_by: %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core}
                    }
@@ -113,6 +116,59 @@ defmodule Apix.SchemaTest do
                  flags: []
                }
              } = TestSchema4.__apix_schemas__()
+    end
+
+    test "equals?/2" do
+      ast = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
+      other = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [], flags: [other: :other]}
+      different = %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []}
+
+      assert Apix.Schema.equals?(ast, ast)
+      assert Apix.Schema.equals?(ast, other)
+      refute Apix.Schema.equals?(ast, different)
+
+      context = %Context{module: Apix.Schema.Extensions.Core.Const, schema: :t, params: [], ast: ast}
+      other = %Context{module: Apix.Schema.Extensions.Core.Const, schema: :t, params: [], ast: ast, flags: [:other]}
+      different = %Context{module: Apix.Schema.Extensions.Core.Any, schema: :t, params: [], ast: ast}
+
+      assert Apix.Schema.equals?(context, context)
+      assert Apix.Schema.equals?(context, other)
+      refute Apix.Schema.equals?(context, different)
+    end
+
+    test "hash/1" do
+      ast = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
+      other = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [], flags: [other: :other]}
+      different = %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []}
+
+      assert Apix.Schema.hash(ast) == Apix.Schema.hash(ast)
+      assert Apix.Schema.hash(ast) == Apix.Schema.hash(other)
+      refute Apix.Schema.hash(ast) == Apix.Schema.hash(different)
+
+      context = %Context{module: Apix.Schema.Extensions.Core.Const, schema: :t, params: [], ast: ast}
+      other = %Context{module: Apix.Schema.Extensions.Core.Const, schema: :t, params: [], ast: ast, flags: [:other]}
+      different = %Context{module: Apix.Schema.Extensions.Core.Any, schema: :t, params: [], ast: ast}
+
+      assert Apix.Schema.hash(context) == Apix.Schema.hash(context)
+      assert Apix.Schema.hash(context) == Apix.Schema.hash(other)
+      refute Apix.Schema.hash(context) == Apix.Schema.hash(different)
+    end
+
+    test "msa/1" do
+      ast = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
+      context = %Context{module: Apix.Schema.Extensions.Core.Const, schema: :t, params: [], ast: ast}
+
+      assert {Apix.Schema.Extensions.Core.Const, :t, 0} = Apix.Schema.msa(context)
+      assert {Apix.Schema.Extensions.Core.Const, :t, 0} = Apix.Schema.msa(ast)
+    end
+
+    test "get_schema/3" do
+      assert %Apix.Schema.Context{
+               module: Apix.Schema.Extensions.Core.Const,
+               schema: :t,
+               params: [{:value, 0, nil}]
+             } =
+               Apix.Schema.get_schema(Apix.Schema.Extensions.Core.Const, :t, 1)
     end
   end
 end

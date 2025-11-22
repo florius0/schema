@@ -2,8 +2,9 @@ defmodule Apix.Schema.Extensions.CoreTest do
   use Apix.Schema.Case
 
   alias Apix.Schema.Ast
+  alias Apix.Schema.Extensions.Core
 
-  describe "#{inspect Apix.Schema.Extensions.Core}" do
+  describe "#{inspect Core}" do
     test "delegates | `Any.t` -> `Apix.Schema.Extensions.Core.Any.t`" do
       defmodule TestSchema1 do
         use Apix.Schema
@@ -699,6 +700,418 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  flags: []
                }
              } = TestSchema17.__apix_schemas__()
+    end
+
+    test "expressions | empty expression" do
+      defmodule TestSchema18 do
+        use Apix.Schema
+
+        schema a: _
+      end
+
+      assert %{
+               {Apix.Schema.Extensions.CoreTest.TestSchema18, :a, 0} => %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{
+                   module: nil,
+                   schema: nil,
+                   args: [],
+                   shortdoc: nil,
+                   doc: nil,
+                   examples: [],
+                   validators: [],
+                   flags: [],
+                   parameter?: false
+                 },
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema18,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: []
+               }
+             } = TestSchema18.__apix_schemas__()
+    end
+
+    test "normalize_ast!/2 | double negation" do
+      ast = %Ast{
+        module: Apix.Schema.Extensions.Core.Not,
+        schema: :t,
+        args: [
+          %Ast{
+            module: Apix.Schema.Extensions.Core.Not,
+            schema: :t,
+            args: [
+              %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []}
+            ]
+          }
+        ]
+      }
+
+      assert %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []} =
+               Core.normalize_ast!(
+                 nil,
+                 ast
+               )
+    end
+
+    test "normalize_ast!/2 | identity" do
+      const_one = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [1]}
+      const_two = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [2]}
+      const_three = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [3]}
+      const_four = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [4]}
+      any = %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []}
+      none = %Ast{module: Apix.Schema.Extensions.Core.None, schema: :t, args: []}
+
+      assert ^const_one =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.And,
+                   schema: :t,
+                   args: [const_one, any]
+                 }
+               )
+
+      assert ^const_one =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.And,
+                   schema: :t,
+                   args: [any, const_one]
+                 }
+               )
+
+      assert ^none =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.And,
+                   schema: :t,
+                   args: [const_two, none]
+                 }
+               )
+
+      assert ^none =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.And,
+                   schema: :t,
+                   args: [none, const_two]
+                 }
+               )
+
+      assert ^const_three =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.Or,
+                   schema: :t,
+                   args: [const_three, none]
+                 }
+               )
+
+      assert ^const_three =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.Or,
+                   schema: :t,
+                   args: [none, const_three]
+                 }
+               )
+
+      assert %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []} =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.Or,
+                   schema: :t,
+                   args: [const_four, any]
+                 }
+               )
+
+      assert %Ast{module: Apix.Schema.Extensions.Core.Any, schema: :t, args: []} =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.Or,
+                   schema: :t,
+                   args: [any, const_four]
+                 }
+               )
+    end
+
+    test "normalize_ast!/2 | absorption" do
+      const_a = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:a]}
+      const_b = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:b]}
+      const_p = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:p]}
+      const_x = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:x]}
+      const_y = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:y]}
+      const_z = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:z]}
+
+      and_expression = %Ast{
+        module: Apix.Schema.Extensions.Core.And,
+        schema: :t,
+        args: [
+          const_a,
+          %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [const_a, const_b]}
+        ]
+      }
+
+      or_expression = %Ast{
+        module: Apix.Schema.Extensions.Core.Or,
+        schema: :t,
+        args: [
+          const_x,
+          %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_x, const_y]}
+        ]
+      }
+
+      and_expression_flipped = %Ast{
+        module: Apix.Schema.Extensions.Core.And,
+        schema: :t,
+        args: [
+          %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [const_a, const_b]},
+          const_a
+        ]
+      }
+
+      or_expression_flipped = %Ast{
+        module: Apix.Schema.Extensions.Core.Or,
+        schema: :t,
+        args: [
+          %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_x, const_y]},
+          const_x
+        ]
+      }
+
+      no_absorption = %Ast{
+        module: Apix.Schema.Extensions.Core.And,
+        schema: :t,
+        args: [
+          %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:p]},
+          %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [const_y, const_z]}
+        ]
+      }
+
+      and_no_absorption_flipped = %Ast{
+        module: Apix.Schema.Extensions.Core.And,
+        schema: :t,
+        args: [
+          %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [const_y, const_z]},
+          const_p
+        ]
+      }
+
+      or_no_absorption = %Ast{
+        module: Apix.Schema.Extensions.Core.Or,
+        schema: :t,
+        args: [
+          const_p,
+          %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_y, const_z]}
+        ]
+      }
+
+      or_no_absorption_flipped = %Ast{
+        module: Apix.Schema.Extensions.Core.Or,
+        schema: :t,
+        args: [
+          %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_y, const_z]},
+          const_p
+        ]
+      }
+
+      assert ^const_a =
+               Core.normalize_ast!(
+                 nil,
+                 and_expression
+               )
+
+      assert ^const_x =
+               Core.normalize_ast!(
+                 nil,
+                 or_expression
+               )
+
+      assert ^const_a =
+               Core.normalize_ast!(
+                 nil,
+                 and_expression_flipped
+               )
+
+      assert ^const_x =
+               Core.normalize_ast!(
+                 nil,
+                 or_expression_flipped
+               )
+
+      assert ^no_absorption =
+               Core.normalize_ast!(
+                 nil,
+                 no_absorption
+               )
+
+      assert ^and_no_absorption_flipped =
+               Core.normalize_ast!(
+                 nil,
+                 and_no_absorption_flipped
+               )
+
+      assert ^or_no_absorption =
+               Core.normalize_ast!(
+                 nil,
+                 or_no_absorption
+               )
+
+      assert ^or_no_absorption_flipped =
+               Core.normalize_ast!(
+                 nil,
+                 or_no_absorption_flipped
+               )
+    end
+
+    test "normalize_ast!/2 | idempotence" do
+      const_a = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:a]}
+      const_b = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:b]}
+
+      assert ^const_a =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.And,
+                   schema: :t,
+                   args: [const_a, const_a]
+                 }
+               )
+
+      assert ^const_b =
+               Core.normalize_ast!(
+                 nil,
+                 %Ast{
+                   module: Apix.Schema.Extensions.Core.Or,
+                   schema: :t,
+                   args: [const_b, const_b]
+                 }
+               )
+    end
+
+    test "normalize_ast!/2 | compact" do
+      const_a = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:a]}
+      const_b = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:b]}
+      const_c = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:c]}
+      const_d = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [:d]}
+
+      ast =
+        %Ast{
+          module: Apix.Schema.Extensions.Core.Or,
+          schema: :t,
+          args: [
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_a, const_b]},
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_a, const_c]}
+          ]
+        }
+
+      expected = %Ast{
+        module: Apix.Schema.Extensions.Core.And,
+        schema: :t,
+        args: [
+          const_a,
+          %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [const_b, const_c]}
+        ]
+      }
+
+      assert ^expected =
+               Core.normalize_ast!(
+                 nil,
+                 ast
+               )
+
+      ast_right_match =
+        %Ast{
+          module: Apix.Schema.Extensions.Core.Or,
+          schema: :t,
+          args: [
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_a, const_b]},
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_c, const_a]}
+          ]
+        }
+
+      assert %Ast{
+               module: Apix.Schema.Extensions.Core.And,
+               schema: :t,
+               args: [
+                 ^const_a,
+                 %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [^const_b, ^const_c]}
+               ]
+             } =
+               Core.normalize_ast!(
+                 nil,
+                 ast_right_match
+               )
+
+      ast_middle_match =
+        %Ast{
+          module: Apix.Schema.Extensions.Core.Or,
+          schema: :t,
+          args: [
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_a, const_b]},
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_b, const_c]}
+          ]
+        }
+
+      assert %Ast{
+               module: Apix.Schema.Extensions.Core.And,
+               schema: :t,
+               args: [
+                 ^const_b,
+                 %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [^const_a, ^const_c]}
+               ]
+             } =
+               Core.normalize_ast!(
+                 nil,
+                 ast_middle_match
+               )
+
+      ast_last_match =
+        %Ast{
+          module: Apix.Schema.Extensions.Core.Or,
+          schema: :t,
+          args: [
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_a, const_b]},
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_c, const_b]}
+          ]
+        }
+
+      assert %Ast{
+               module: Apix.Schema.Extensions.Core.And,
+               schema: :t,
+               args: [
+                 ^const_b,
+                 %Ast{module: Apix.Schema.Extensions.Core.Or, schema: :t, args: [^const_a, ^const_c]}
+               ]
+             } =
+               Core.normalize_ast!(
+                 nil,
+                 ast_last_match
+               )
+
+      no_compact =
+        %Ast{
+          module: Apix.Schema.Extensions.Core.Or,
+          schema: :t,
+          args: [
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_a, const_b]},
+            %Ast{module: Apix.Schema.Extensions.Core.And, schema: :t, args: [const_c, const_d]}
+          ]
+        }
+
+      assert ^no_compact =
+               Core.normalize_ast!(
+                 nil,
+                 no_compact
+               )
     end
   end
 end

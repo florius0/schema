@@ -4,11 +4,7 @@ defmodule Apix.Schema.Extensions.Core.Or do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
-  @moduledoc """
-  Schema for `or` operation.
-
-  See #{inspect Apix.Schema.Extensions.Core}
-  """
+  @moduledoc false
 
   schema t: _, params: [:schema1, :schema2] do
     validate valid?(it, schema1) or valid?(it, schema2)

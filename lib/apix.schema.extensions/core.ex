@@ -75,8 +75,8 @@ defmodule Apix.Schema.Extensions.Core do
 
   > #### Info {: .info}
   >
-  > Due to technical limitations, local (defied in same module) schema referencing is a separate extension #{inspect Apix.Schema.Extensions.Core.LocalReference}.
-  > #{inspect Apix.Schema.Extensions.Core.LocalReference} should be installed as last extension to prevent all other expressions to be recognized as local references
+  > Due to technical limitations, local (defied in same module) schema referencing is a separate extension `#{inspect Apix.Schema.Extensions.Core.LocalReference}`.
+  > `#{inspect Apix.Schema.Extensions.Core.LocalReference}` should be installed as last extension to prevent all other expressions to be recognized as local references
   """
 
   @behaviour Extension
@@ -184,16 +184,16 @@ defmodule Apix.Schema.Extensions.Core do
   @impl Extension
   def normalize_ast!(_context, ast) do
     ast
-    |> Ast.postwalk(&normalize_double_not/1)
+    |> Ast.postwalk(&normalize_double_negation/1)
     |> Ast.postwalk(&normalize_identity/1)
     |> Ast.postwalk(&normalize_absorption/1)
     |> Ast.postwalk(&normalize_idempotence/1)
     |> Ast.postwalk(&normalize_compact/1)
   end
 
-  defp normalize_double_not(%Ast{module: Not, schema: :t, args: [%Ast{module: Not, schema: :t, args: [ast]}]}), do: ast
+  defp normalize_double_negation(%Ast{module: Not, schema: :t, args: [%Ast{module: Not, schema: :t, args: [ast]}]}), do: ast
 
-  defp normalize_double_not(ast), do: ast
+  defp normalize_double_negation(ast), do: ast
 
   defp normalize_identity(%Ast{module: And, schema: :t, args: [ast, %Ast{module: Any, schema: :t, args: []}]}), do: ast
   defp normalize_identity(%Ast{module: And, schema: :t, args: [%Ast{module: Any, schema: :t, args: []}, ast]}), do: ast

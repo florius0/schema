@@ -120,6 +120,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     !!Graph.get_path_by(from, to, predicate)
   end
 
+  @doc group: "Internal"
   @doc """
   Calls the `relate/2` function to determine relationships between two types.
 
@@ -170,6 +171,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     ]
   end
 
+  @doc group: "Internal"
   @doc """
   Calls the `relationship/3` function to determine relationships between two types in general.
 
@@ -214,6 +216,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   defp filter_underscore({_type, _left, %Context{module: nil, schema: nil, params: []} = _right} = _relation), do: false
   defp filter_underscore(_relation), do: true
 
+  @doc group: "Internal"
   @doc """
   Converts `t:Context.t/0` or `t:Ast.t/0` to `:digraph.vertex()`.
   """
@@ -224,6 +227,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     |> Apix.Schema.hash()
   end
 
+  @doc group: "Internal"
   @doc """
   Tracks schema and it's references in the graph.
   """
@@ -254,6 +258,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     :ok
   end
 
+  @doc group: "Internal"
   @doc """
   Prunes graph of non-existent or stale information.
 
@@ -284,6 +289,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end)
   end
 
+  @doc group: "Internal"
   @doc """
   Validates the graph.
 
@@ -305,6 +311,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end)
   end
 
+  @doc group: "Internal"
   @doc """
   Builds the sub/super-type relations in the graph.
   """
@@ -344,6 +351,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end)
   end
 
+  @doc group: "Internal"
   @doc """
   Builds the sub/super-type relates in the graph for given `t:Context.t/0` or `t:Ast.t/0`.
   """
@@ -383,6 +391,10 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end)
   end
 
+  @doc group: "Internal"
+  @doc """
+  Builds the sub/super-type relationships in the graph for given `t:Context.t/0` or `t:Ast.t/0`.
+  """
   def build_type_relationships!(context_or_ast, peers, existing) do
     new = Enum.reduce(peers, existing, &relationship(context_or_ast, &1, &2))
 
@@ -488,6 +500,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     context
   end
 
+  @doc group: "Internal"
   @doc """
   Runs all the `#{inspect __MODULE__}` functions that are intended to be run
   after compilation is finished to avoid corrupting `#{inspect __MODULE__}` state.

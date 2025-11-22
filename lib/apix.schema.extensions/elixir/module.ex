@@ -1,9 +1,7 @@
 defmodule Apix.Schema.Extensions.Elixir.Module do
   use Apix.Schema
 
-  @moduledoc """
-  Schema for `t:module/0`
-  """
+  @moduledoc false
 
   schema t: Atom.t()
 end

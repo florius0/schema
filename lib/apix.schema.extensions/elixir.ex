@@ -207,6 +207,7 @@ defmodule Apix.Schema.Extensions.Elixir do
 
   def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false
 
+  @doc false
   def inner_expression!(context, [type_elixir_ast], schema_ast, env) do
     Context.expression!(context, type_elixir_ast, schema_ast, env)
   end

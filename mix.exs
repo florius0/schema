@@ -60,9 +60,16 @@ defmodule Apix.Schema.MixProject do
           Apix.Schema.Warning
         ],
         Extensions: [
+          Apix.Schema.Extensions.TypeGraph,
           Apix.Schema.Extensions.Core,
           Apix.Schema.Extensions.Core.LocalReference,
           Apix.Schema.Extensions.Elixir
+        ],
+        Internal: [
+          Apix.Schema.Extensions.TypeGraph.Definition,
+          Apix.Schema.Extensions.TypeGraph.Dot,
+          Apix.Schema.Extensions.TypeGraph.Graph,
+          Apix.Schema.Extensions.TypeGraph.OnCompilation
         ]
       ],
       nest_modules_by_prefix: [

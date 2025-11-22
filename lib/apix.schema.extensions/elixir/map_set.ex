@@ -1,9 +1,7 @@
 defmodule Apix.Schema.Extensions.Elixir.MapSet do
   use Apix.Schema
 
-  @moduledoc """
-  Schema for `t:#{inspect MapSet}.t/0`
-  """
+  @moduledoc false
 
   schema t: Struct.t(MapSet)
 

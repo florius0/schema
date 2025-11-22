@@ -24,7 +24,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Definition do
 
       quote generated: true do
         @doc """
-        Delegates to `#{unquote(mod)}.#{unquote(fun)}/#{unquote(n_args)}`
+        Delegates to `#{inspect unquote(mod)}.#{unquote(fun)}/#{unquote(n_args)}`
         """
         def unquote(fun)(unquote_splicing(vars)) do
           ensure!()

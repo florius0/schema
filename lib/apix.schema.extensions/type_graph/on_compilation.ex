@@ -6,6 +6,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.OnCompilation do
 
   This module defines a `Task` to call `#{inspect TypeGraph}.on_compilation!/0` on application start.
   """
+
   @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(opts) do
     %{

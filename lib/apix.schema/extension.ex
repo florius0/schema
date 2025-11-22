@@ -12,6 +12,7 @@ defmodule Apix.Schema.Extension do
 
   For examples, refer to:
 
+  - `#{inspect Apix.Schema.Extensions.TypeGraph}`
   - `#{inspect Apix.Schema.Extensions.Core}`
   - `#{inspect Apix.Schema.Extensions.Core.LocalReference}`
   - `#{inspect Apix.Schema.Extensions.Elixir}`

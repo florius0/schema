@@ -1,0 +1,33 @@
+project:
+  name: apix_schema
+  language: elixir
+
+tools:
+  test:
+    command: mix test
+    env:
+      MIX_ENV: test
+  coverage:
+    command: mix test --cover
+    env:
+      MIX_ENV: test
+
+style:
+  formatting:
+    - Run `mix format` before committing formatting changes and keep Elixir-style indentation.
+    - Skim nearby code to mirror existing codestyle (naming, layout, spacing) before adding new code or tests.
+  testing:
+    - Tests should build AST structs explicitly when asserting normalizations instead of relying on helpers.
+    - Prefer inline pattern-matching assertions (with pinned values) over comparing structs via helper functions.
+    - Prefer pattern-matching directly on function results instead of extracting values for separate assertions.
+    - Prefer pattern-matching assertions in general.
+    - Keep schema specs explicit (e.g., describe module names, parameter lists) so `Apix.Schema` contexts remain readable.
+    - When adding or changing tests, verify coverage (for example with `mix test --cover`) to confirm the desired branches are exercised.
+    - In doctests/describe/test strings that name a module, interpolate via `"#{inspect Module}"` so tooling can locate the reference.
+    - Name tests after the function being exercised (e.g., `prewalk/2`, `equals?/2`) and focus each test on one function.
+
+notes:
+  - The project uses `Apix.Schema.Case` with a setup that clears the `TypeGraph`.
+  - Normalization tests should keep the AST shapes obvious to cover every branch (double negation, identity, absorption, idempotence, compact, nil-expansion).
+  - After running coverage, consult corresponding `cover/<modulename>.html` artifacts to verify uncovered lines.
+  - Single-test coverage runs (e.g., `mix test --cover test/specific_test.exs`) treat all other modules as 0%; for accurate numbers either run `mix test --cover` or parse the coverage table/HTML for the modules exercised.

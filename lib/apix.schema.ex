@@ -33,7 +33,7 @@ defmodule Apix.Schema do
       |> Code.eval_quoted([], __CALLER__)
       |> elem(0)
 
-    extensions = extensions || Extension.extensions_config()
+    extensions = extensions || Extension.config()
 
     context =
       %Context{}

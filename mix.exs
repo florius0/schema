@@ -84,7 +84,8 @@ defmodule Apix.Schema.MixProject do
     [
       ignore_modules: [
         Apix.Schema.Extensions.TypeGraph.Definition,
-        Apix.Schema.Extensions.TypeGraph.Dot
+        Apix.Schema.Extensions.TypeGraph.Dot,
+        Apix.Schema.Extensions.TypeGraph.Graph
       ]
     ]
   end

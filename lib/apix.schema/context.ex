@@ -204,7 +204,14 @@ defmodule Apix.Schema.Context do
   """
   @spec normalize_ast!(t() | Ast.t()) :: Ast.t()
   def normalize_ast!(%__MODULE__{} = context), do: normalize_ast!(context, context.ast)
-  def normalize_ast!(%Ast{} = ast), do: ast |> Apix.Schema.get_schema() |> normalize_ast!(ast)
+
+  def normalize_ast!(%Ast{} = ast) do
+    context = Apix.Schema.get_schema(ast)
+
+    if context,
+      do: normalize_ast!(context, ast),
+      else: ast
+  end
 
   @doc """
   Normalizes `t:#{inspect Ast}.t/0`. through all extensions.

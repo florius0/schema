@@ -15,16 +15,16 @@ defmodule Apix.Schema.Extensions.Core.And do
     relate %Ast{args: [schema1, schema2]} = it, to do
       [
         # Default subtyping
-        {:subtype, it, to},
-        {:supertype, to, it},
+        {:subtype, to, it},
+        {:supertype, it, to},
         # Identity subtyping
         {:subtype, it, it},
         {:supertype, it, it},
-        # And-specific subtyping
-        {:subtype, it, schema1},
-        {:subtype, it, schema2},
-        {:supertype, schema1, it},
-        {:supertype, schema2, it}
+        # Or-specific subtyping
+        {:subtype, schema1, it},
+        {:subtype, schema2, it},
+        {:supertype, it, schema1},
+        {:supertype, it, schema2}
       ]
     end
   end

@@ -89,7 +89,16 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     subtype = to_vertex(subtype)
     supertype = to_vertex(supertype)
 
-    !Graph.get_path_by(subtype, supertype, &(&1 == :not_subtype)) and !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
+    cond do
+      subtype == supertype ->
+        true
+
+      Graph.get_path_by(subtype, supertype, &(&1 == :not_subtype)) ->
+        false
+
+      true ->
+        !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
+    end
   end
 
   @doc """
@@ -104,7 +113,16 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     supertype = to_vertex(supertype)
     subtype = to_vertex(subtype)
 
-    !Graph.get_path_by(subtype, supertype, &(&1 == :not_supertype)) and !!Graph.get_path_by(subtype, supertype, &(&1 == :supertype))
+    cond do
+      supertype == subtype ->
+        true
+
+      Graph.get_path_by(subtype, supertype, &(&1 == :not_supertype)) ->
+        false
+
+      true ->
+        !!Graph.get_path_by(supertype, subtype, &(&1 == :supertype))
+    end
   end
 
   @doc """
@@ -158,7 +176,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
           []
       end
     end)
-    |> Enum.filter(&filter_underscore/1)
+    |> Enum.filter(&filter_empty/1)
   end
 
   @doc false
@@ -204,17 +222,17 @@ defmodule Apix.Schema.Extensions.TypeGraph do
           existing
       end
     end)
-    |> Enum.filter(&filter_underscore/1)
+    |> Enum.filter(&filter_empty/1)
   end
 
   @doc false
   def default_relationship(_it, _peer, existing), do: existing
 
-  defp filter_underscore({_type, %Ast{module: nil, schema: nil, args: []} = _left, _right} = _relation), do: false
-  defp filter_underscore({_type, %Context{module: nil, schema: nil, params: []} = _left, _right} = _relation), do: false
-  defp filter_underscore({_type, _left, %Ast{module: nil, schema: nil, args: []} = _right} = _relation), do: false
-  defp filter_underscore({_type, _left, %Context{module: nil, schema: nil, params: []} = _right} = _relation), do: false
-  defp filter_underscore(_relation), do: true
+  defp filter_empty({_type, %Ast{module: nil, schema: nil, args: []} = _left, _right} = _relation), do: false
+  defp filter_empty({_type, %Context{module: nil, schema: nil, params: []} = _left, _right} = _relation), do: false
+  defp filter_empty({_type, _left, %Ast{module: nil, schema: nil, args: []} = _right} = _relation), do: false
+  defp filter_empty({_type, _left, %Context{module: nil, schema: nil, params: []} = _right} = _relation), do: false
+  defp filter_empty(_relation), do: true
 
   @doc group: "Internal"
   @doc """
@@ -223,7 +241,14 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   @spec to_vertex(Context.t() | Ast.t()) :: :digraph.vertex()
   def to_vertex(context_or_ast) when is_struct(context_or_ast, Context) or is_struct(context_or_ast, Ast) do
     context_or_ast
-    |> Context.normalize_ast!()
+    |> case do
+      %Context{} = context ->
+        ast = Context.normalize_ast!(context)
+        struct(context, ast: ast)
+
+      %Ast{} = ast ->
+        Context.normalize_ast!(ast)
+    end
     |> Apix.Schema.hash()
   end
 
@@ -245,12 +270,12 @@ defmodule Apix.Schema.Extensions.TypeGraph do
         ast
 
       ast ->
-        ast_vertex = context |> Context.normalize_ast!(ast) |> Apix.Schema.hash()
-        ast_vertex_label = Apix.Schema.get_schema(ast) || Apix.Schema.msa(ast)
+        context_vertex_label = Apix.Schema.get_schema(ast) || Apix.Schema.add_flags(ast, :maybe_undefined)
+        context_vertex = Apix.Schema.hash(context_vertex_label)
 
-        Graph.add_vertex(ast_vertex, ast_vertex_label)
-        Graph.add_edge({vertex, ast_vertex, :references}, vertex, ast_vertex, :references)
-        Graph.add_edge({ast_vertex, vertex, :referenced}, ast_vertex, vertex, :referenced)
+        Graph.add_vertex(context_vertex, context_vertex_label)
+        Graph.add_edge({vertex, context_vertex, :references}, vertex, context_vertex, :references)
+        Graph.add_edge({context_vertex, vertex, :referenced}, context_vertex, vertex, :referenced)
 
         ast
     end)
@@ -356,9 +381,8 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   Builds the sub/super-type relates in the graph for given `t:Context.t/0` or `t:Ast.t/0`.
   """
   def build_type_relates!(context_or_ast) do
-    normalized = Context.normalize_ast!(context_or_ast)
-
-    normalized
+    context_or_ast
+    |> Context.normalize_ast!()
     |> Ast.traverse(
       {[context_or_ast], relate(context_or_ast, context_or_ast)},
       fn
@@ -450,7 +474,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     struct(schema_ast, relates: [{env.module, function_name, []} | schema_ast.relates])
   end
 
-  def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a] = mfa}]} = _elixir_ast, schema_ast, env, _literal?) do
+  def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, env, _literal?) do
     {mfa, _binding} = Code.eval_quoted(mfa, [], env)
 
     struct(schema_ast, relates: [mfa | schema_ast.relates])
@@ -484,7 +508,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     struct(schema_ast, relationships: [{env.module, function_name, []} | schema_ast.relationships])
   end
 
-  def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a] = mfa}]} = _elixir_ast, schema_ast, env, _literal?) do
+  def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, env, _literal?) do
     {mfa, _binding} = Code.eval_quoted(mfa, [], env)
 
     struct(schema_ast, relationships: [mfa | schema_ast.relationships])

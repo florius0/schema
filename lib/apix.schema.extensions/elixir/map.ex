@@ -7,7 +7,5 @@ defmodule Apix.Schema.Extensions.Elixir.Map do
     validate is_map(it)
   end
 
-  schema t: t(), params: [:fields] do
-    validate is_map(it)
-  end
+  schema t: t(), params: [:fields]
 end

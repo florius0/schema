@@ -58,7 +58,7 @@ defmodule Apix.Schema.Ast do
   @doc """
   Similar to `Macro.prewalk/2`
   """
-  @spec prewalk(t(), (t() -> t())) :: t()
+  @spec prewalk(ast_like, (t() -> t())) :: ast_like when ast_like: t() | list() | tuple()
   def prewalk(%__MODULE__{} = ast, fun) when is_function(fun, 1) do
     ast
     |> prewalk(nil, fn ast, _acc -> {fun.(ast), nil} end)
@@ -68,16 +68,16 @@ defmodule Apix.Schema.Ast do
   @doc """
   Similar to `Macro.prewalk/3`
   """
-  @spec prewalk(t(), any(), (t(), any() -> {t(), any()})) :: {t(), any()}
-  def prewalk(%__MODULE__{} = ast, acc, fun) when is_function(fun, 2) do
+  @spec prewalk(ast_like, any(), (t(), any() -> {t(), any()})) :: {ast_like, any()} when ast_like: t() | list() | tuple()
+  def prewalk(ast, acc, fun) when is_function(fun, 2) do
     traverse(ast, acc, fun, fn x, a -> {x, a} end)
   end
 
   @doc """
   Similar to `Macro.postwalk/2`
   """
-  @spec postwalk(t(), (t() -> t())) :: t()
-  def postwalk(%__MODULE__{} = ast, fun) when is_function(fun, 1) do
+  @spec postwalk(ast_like, (t() -> t())) :: ast_like when ast_like: t() | list() | tuple()
+  def postwalk(ast, fun) when is_function(fun, 1) do
     ast
     |> postwalk(nil, fn ast, _acc -> {fun.(ast), nil} end)
     |> elem(0)
@@ -86,15 +86,15 @@ defmodule Apix.Schema.Ast do
   @doc """
   Similar to `Macro.postwalk/3`
   """
-  @spec postwalk(t(), any(), (t(), any() -> {t(), any()})) :: {t(), any()}
-  def postwalk(%__MODULE__{} = ast, acc, fun) when is_function(fun, 2) do
+  @spec postwalk(ast_like, any(), (t(), any() -> {t(), any()})) :: {ast_like, any()} when ast_like: t() | list() | tuple()
+  def postwalk(ast, acc, fun) when is_function(fun, 2) do
     traverse(ast, acc, fn x, a -> {x, a} end, fun)
   end
 
   @doc """
   Similar to `Macro.traverse/4`
   """
-  @spec traverse(t(), any(), (t(), any() -> {t(), any()}), (t(), any() -> {t(), any()})) :: {t(), any()}
+  @spec traverse(ast_like, any(), (t(), any() -> {t(), any()}), (t(), any() -> {t(), any()})) :: {ast_like, any()} when ast_like: t() | list() | tuple()
   def traverse(%__MODULE__{} = ast, acc, pre, post) when is_function(pre, 2) and is_function(post, 2) do
     {ast, acc} = pre.(ast, acc)
 
@@ -102,17 +102,9 @@ defmodule Apix.Schema.Ast do
       ast.args
       |> Enum.reverse()
       |> Enum.reduce({[], acc}, fn
-        %__MODULE__{} = arg, {args, acc} ->
-          {arg, acc} = traverse(arg, acc, pre, post)
-
-          {[arg | args], acc}
-
-        {key, %__MODULE__{} = arg}, {args, acc} ->
-          {arg, acc} = traverse(arg, acc, pre, post)
-
-          {[{key, arg} | args], acc}
-
         arg, {args, acc} ->
+          {arg, acc} = traverse(arg, acc, pre, post)
+
           {[arg | args], acc}
       end)
 
@@ -120,6 +112,30 @@ defmodule Apix.Schema.Ast do
 
     post.(ast, acc)
   end
+
+  def traverse(list, acc, pre, post) when is_list(list) and is_function(pre, 2) and is_function(post, 2) do
+    Enum.reduce(list, {[], acc}, fn arg, {args, acc} ->
+      {arg, acc} = traverse(arg, acc, pre, post)
+      {[arg | args], acc}
+    end)
+  end
+
+  # keyword() optimization
+  def traverse({key, value}, acc, pre, post) when is_atom(key) and is_function(pre, 2) and is_function(post, 2) do
+    {value, acc} = traverse(value, acc, pre, post)
+    {{key, value}, acc}
+  end
+
+  def traverse(tuple, acc, pre, post) when is_tuple(tuple) and is_function(pre, 2) and is_function(post, 2) do
+    {tuple, acc} =
+      tuple
+      |> Tuple.to_list()
+      |> traverse(acc, pre, post)
+
+    {List.to_tuple(tuple), acc}
+  end
+
+  def traverse(x, acc, pre, post) when is_function(pre, 2) and is_function(post, 2), do: {x, acc}
 
   @doc """
   Structurally compares `t:#{inspect __MODULE__}.t/0`'s.

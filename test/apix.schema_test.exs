@@ -170,5 +170,35 @@ defmodule Apix.SchemaTest do
              } =
                Apix.Schema.get_schema(Apix.Schema.Extensions.Core.Const, :t, 1)
     end
+
+    test "map_flags/2" do
+      assert %Ast{flags: [old: true, mapped: true]} =
+               %Ast{
+                 module: Apix.Schema.Extensions.Core.Const,
+                 schema: :t,
+                 flags: [old: true]
+               }
+               |> Apix.Schema.map_flags(&(&1 ++ [mapped: true]))
+    end
+
+    test "add_flags/2" do
+      assert %Context{flags: [base: :flag, added: :flag]} =
+               %Context{
+                 module: Apix.Schema.Extensions.Core.Const,
+                 schema: :t,
+                 flags: [base: :flag]
+               }
+               |> Apix.Schema.add_flags(added: :flag)
+    end
+
+    test "remove_flags/2" do
+      assert %Context{flags: []} =
+               %Context{
+                 module: Apix.Schema.Extensions.Core.Const,
+                 schema: :t,
+                 flags: [base: :flag]
+               }
+               |> Apix.Schema.remove_flags(base: :flag)
+    end
   end
 end

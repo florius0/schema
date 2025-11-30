@@ -10,7 +10,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning do
     use Apix.Schema
 
     # Can be written as just Ant.t()
-    schema a: Integer.t() or Any.t()
+    schema a: Any.t() or Any.t()
   end
   ```
   """
@@ -18,26 +18,26 @@ defmodule Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning do
   @type t() :: %__MODULE__{
           __exception__: true,
           message: String.t(),
-          original_ast: Ast.t(),
+          ast: Ast.t(),
           reduced_ast: Ast.t(),
           meta: Meta.t()
         }
 
-  defexception [:message, :original_ast, :reduced_ast, :meta]
+  defexception [:message, :ast, :reduced_ast, :meta]
 
   @impl true
-  def exception(original_ast: %Ast{} = original_ast, reduced_ast: %Ast{} = reduced_ast) do
+  def exception(ast: %Ast{} = ast, reduced_ast: %Ast{} = reduced_ast) do
     %__MODULE__{
       message: """
-      #{inspect original_ast} can be reduced to #{inspect reduced_ast} and remain equivalent.
+      #{inspect ast} can be reduced to #{inspect reduced_ast} and remain equivalent.
 
-      If you intended that rewrite it as #{inspect reduced_ast}.
+      If you intended that, rewrite it as #{inspect reduced_ast}.
 
-      #{original_ast.meta}
+      #{ast.meta}
       """,
-      original_ast: original_ast,
+      ast: ast,
       reduced_ast: reduced_ast,
-      meta: original_ast.meta
+      meta: ast.meta
     }
   end
 end

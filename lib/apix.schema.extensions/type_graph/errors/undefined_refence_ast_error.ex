@@ -1,7 +1,11 @@
 defmodule Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError do
   alias Apix.Schema.Ast
+  alias Apix.Schema.Ast.Meta
 
-  @undefined_reference """
+  @moduledoc """
+  `#{inspect __MODULE__}` is raised when operating on `t:#{inspect Ast}.t/0` which has an undefined reference, e.g.:
+
+  ```elixir
   defmodule UndefinedReferenceSchema do
     use Apix.Schema
 
@@ -9,37 +13,26 @@ defmodule Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError do
       field :a, b()
     end
   end
-  """
-
-  @moduledoc """
-  `#{inspect __MODULE__}` is raised when operating on `t:#{inspect Ast}.t/0` which has an undefined reference
-
-  ```elixir
-  #{@undefined_reference}
   ```
   """
 
   @type t() :: %__MODULE__{
           __exception__: true,
           message: String.t(),
-          ast: Ast.t()
+          ast: Ast.t(),
+          meta: Meta.t()
         }
 
-  defexception [:message, :ast]
+  defexception [:message, :ast, :meta]
 
   @impl Exception
   def exception(%Ast{} = ast) do
     %__MODULE__{
       message: """
-      #{inspect ast, pretty: true} has an undefined reference in #{ast.meta}, e.g.:
-
-      #{@undefined_reference}
-
-      Check if schema you are referencing exists, or if there is a typo.
-
-      #{ast.meta}
+      #{inspect ast, pretty: true} is undefined in #{ast.meta}
       """,
-      ast: ast
+      ast: ast,
+      meta: ast.meta
     }
   end
 end

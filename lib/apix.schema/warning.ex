@@ -1,5 +1,7 @@
 defmodule Apix.Schema.Warning do
+  alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
+  alias Apix.Schema.Context
 
   @moduledoc """
   Warning type and common functions
@@ -11,10 +13,12 @@ defmodule Apix.Schema.Warning do
   Every Warning must implement `#{inspect Exception}` behaviour.
   """
   @type t() :: %{
-          __struct__: module(),
-          __exception__: true,
-          message: String.t(),
-          meta: Meta.t() | nil
+          :__struct__ => module(),
+          :__exception__ => true,
+          :message => String.t(),
+          optional(:ast) => Ast.t() | nil,
+          optional(:context) => Context.t() | nil,
+          optional(:meta) => Meta.t() | nil
         }
 
   @doc """
@@ -23,8 +27,8 @@ defmodule Apix.Schema.Warning do
   @spec print(t()) :: :ok
   def print(warning) do
     opts =
-      case warning.meta do
-        %Meta{} = m ->
+      case warning do
+        %{meta: %Meta{} = m} ->
           m
           |> Map.from_struct()
           |> Keyword.new()
@@ -33,6 +37,8 @@ defmodule Apix.Schema.Warning do
           [file: "<no file>"]
       end
 
-    IO.warn(warning.message, opts)
+    warning
+    |> Exception.message()
+    |> IO.warn(opts)
   end
 end

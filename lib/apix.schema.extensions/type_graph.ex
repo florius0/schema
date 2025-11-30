@@ -285,9 +285,9 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @doc group: "Internal"
   @doc """
-  Prunes graph of non-existent or stale information.
+  Prunes graph of non-existent of stale `%#{inspect Context}`'s.
 
-  Intended to be called after either all code is compiled or on hot reloads.
+  Intended to be called after either all code is compiled or on hot reloads before `validate!/0`.
   """
   @spec prune!() :: :ok
   def prune! do
@@ -299,18 +299,52 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       {hash, context, new_context}
     end)
     |> Enum.each(fn
-      # Context unchanged, do nothing
-      {_hash, context, context} ->
+      # Unchanged, do nothing
+      {_hash, context_or_ast, context_or_ast} ->
         :ok
 
-      # Context deleted, delete it
-      {hash, _context1, nil} ->
-        Graph.del_vertex(hash)
-
       # Context changed, re-track it
-      {hash, _context1, context2} ->
+      {hash, %Context{} = _context1, %Context{} = context2} ->
         Graph.del_vertex(hash)
         track!(context2)
+
+      # Context deleted or missing, delete it
+      {hash, %Context{} = _context1, nil} ->
+        Graph.del_vertex(hash)
+
+      # Otherwise do nothing
+      {_hash, _context_or_ast1, _context_or_ast2} ->
+        :ok
+    end)
+  end
+
+  @doc group: "Internal"
+  @doc """
+  Prunes graph of non-existent of all stale information.
+
+  Intended to be called after either all code is compiled or on hot reloads after `validate!/0`.
+  """
+  @spec prune_all!() :: :ok
+  def prune_all! do
+    Graph.vertices()
+    |> Enum.map(fn hash ->
+      {^hash, context} = Graph.vertex(hash)
+      new_context = Apix.Schema.get_schema(context)
+
+      {hash, context, new_context}
+    end)
+    |> Enum.each(fn
+      # Unchanged, do nothing
+      {_hash, context_or_ast, context_or_ast} ->
+        :ok
+
+      # Context or Ast deleted or missing, delete it
+      {hash, _context_or_ast1, nil} ->
+        Graph.del_vertex(hash)
+
+      # Otherwise do nothing
+      {_hash, _context_or_ast_1, _context_or_ast_2} ->
+        :ok
     end)
   end
 
@@ -542,5 +576,9 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end
 
     :ok
+  after
+    unless Code.can_await_module_compilation?() do
+      prune_all!()
+    end
   end
 end

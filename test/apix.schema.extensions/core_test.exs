@@ -622,14 +622,20 @@ defmodule Apix.Schema.Extensions.CoreTest do
       defmodule TestSchema16 do
         use Apix.Schema
 
-        schema a: X.t(Any.t())
+        schema a: 1, params: [:p]
+      end
+
+      defmodule TestSchema17 do
+        use Apix.Schema
+
+        schema a: TestSchema16.a(Any.t())
       end
 
       assert %{
-               {Apix.Schema.Extensions.CoreTest.TestSchema16, :a, 0} => %Apix.Schema.Context{
+               {Apix.Schema.Extensions.CoreTest.TestSchema17, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
-                   module: X,
-                   schema: :t,
+                   module: Apix.Schema.Extensions.CoreTest.TestSchema16,
+                   schema: :a,
                    args: [
                      %Apix.Schema.Ast{
                        module: Apix.Schema.Extensions.Core.Any,
@@ -650,25 +656,25 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema16,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema17,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             } = TestSchema16.__apix_schemas__()
+             } = TestSchema17.__apix_schemas__()
     end
 
     test "expressions | parameter referencing" do
-      defmodule TestSchema17 do
+      defmodule TestSchema18 do
         use Apix.Schema
 
         schema a: p2(p1), params: [:p1, p2: 1]
       end
 
       assert %{
-               {Apix.Schema.Extensions.CoreTest.TestSchema17, :a, 2} => %Apix.Schema.Context{
+               {Apix.Schema.Extensions.CoreTest.TestSchema18, :a, 2} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: nil,
                    schema: :p2,
@@ -692,25 +698,25 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: true
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema17,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema18,
                  schema: :a,
                  params: [{:p1, 0, nil}, {:p2, 1, nil}],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             } = TestSchema17.__apix_schemas__()
+             } = TestSchema18.__apix_schemas__()
     end
 
     test "expressions | empty expression" do
-      defmodule TestSchema18 do
+      defmodule TestSchema19 do
         use Apix.Schema
 
         schema a: _
       end
 
       assert %{
-               {Apix.Schema.Extensions.CoreTest.TestSchema18, :a, 0} => %Apix.Schema.Context{
+               {Apix.Schema.Extensions.CoreTest.TestSchema19, :a, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: nil,
                    schema: nil,
@@ -722,14 +728,14 @@ defmodule Apix.Schema.Extensions.CoreTest do
                    flags: [],
                    parameter?: false
                  },
-                 module: Apix.Schema.Extensions.CoreTest.TestSchema18,
+                 module: Apix.Schema.Extensions.CoreTest.TestSchema19,
                  schema: :a,
                  params: [],
                  warnings: [],
                  errors: [],
                  flags: []
                }
-             } = TestSchema18.__apix_schemas__()
+             } = TestSchema19.__apix_schemas__()
     end
 
     test "normalize_ast!/2 | double negation" do

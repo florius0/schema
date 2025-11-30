@@ -6,14 +6,15 @@ defmodule Apix.Schema.Extensions.Core.LocalReferenceTest do
       defmodule TestSchema1 do
         use Apix.Schema
 
-        schema a: t(Any.t())
+        schema a: 1, params: [:p]
+        schema b: a(Any.t())
       end
 
       assert %{
-               {Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1, :a, 0} => %Apix.Schema.Context{
+               {Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1, :b, 0} => %Apix.Schema.Context{
                  ast: %Apix.Schema.Ast{
                    module: Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1,
-                   schema: :t,
+                   schema: :a,
                    args: [
                      %Apix.Schema.Ast{
                        module: Apix.Schema.Extensions.Core.Any,
@@ -35,7 +36,7 @@ defmodule Apix.Schema.Extensions.Core.LocalReferenceTest do
                    parameter?: false
                  },
                  module: Apix.Schema.Extensions.Core.LocalReferenceTest.TestSchema1,
-                 schema: :a,
+                 schema: :b,
                  params: [],
                  warnings: [],
                  errors: [],

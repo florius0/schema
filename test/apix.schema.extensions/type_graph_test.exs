@@ -2,14 +2,14 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
   use Apix.Schema.Case
 
   alias Apix.Schema.Extensions.TypeGraph
-  alias Apix.Schema.Extensions.TypeGraph.Graph
 
   alias Apix.Schema.Extensions.TypeGraph.Errors.FullyRecursiveAstError
-  alias Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceError
+  alias Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError
 
   alias Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning
 
   alias Apix.Schema.Ast
+  alias Apix.Schema.Ast.Meta
   alias Apix.Schema.Context
 
   describe "#{inspect Apix.Schema.Extensions.TypeGraph}" do
@@ -496,31 +496,42 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
 
     test "#{inspect FullyRecursiveAstError}" do
       defmodule TestSchema18 do
-        # use Apix.Schema
+        use Apix.Schema
 
-        # schema a: a()
+        schema a: a()
       end
 
       defmodule TestSchema19 do
-        # use Apix.Schema
+        use Apix.Schema
 
-        # schema a: b()
-        # schema b: a()
+        schema a: b()
+        schema b: a()
       end
 
       defmodule TestSchema20 do
-        # use Apix.Schema
+        use Apix.Schema
 
-        # schema a: a() or Any.t()
+        schema a: a() or Any.t()
       end
     end
 
-    test "#{inspect UndefinedReferenceError}" do
-      defmodule TestSchema21 do
-        # use Apix.Schema
+    test "#{inspect UndefinedReferenceAstError}" do
+      exception =
+        assert_raise UndefinedReferenceAstError,
+                     fn ->
+                       defmodule TestSchema21 do
+                         use Apix.Schema
 
-        # schema a: Undefined.t()
-      end
+                         schema a: b()
+                       end
+                     end
+
+      assert %UndefinedReferenceAstError{
+               ast: %Ast{module: Apix.Schema.Extensions.TypeGraphTest.TestSchema21, schema: :b, args: []},
+               meta: %Meta{}
+             } = exception
+
+      assert Exception.message(exception) =~ "is undefined"
     end
 
     test "#{inspect ReducibleAstWarning}" do

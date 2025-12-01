@@ -1,6 +1,7 @@
 defmodule Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
+  alias Apix.Schema.Context
 
   @moduledoc """
   `#{inspect __MODULE__}` is raised when `t:#{inspect Ast}.t/0` can be reduced further, e.g.:
@@ -26,7 +27,25 @@ defmodule Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning do
   defexception [:message, :ast, :reduced_ast, :meta]
 
   @impl true
-  def exception(ast: %Ast{} = ast, reduced_ast: %Ast{} = reduced_ast) do
+  def exception(ast: ast, reduced_ast: reduced_ast) when (is_struct(ast, Ast) or is_struct(ast, Context)) and (is_struct(reduced_ast, Ast) or is_struct(reduced_ast, Context)) do
+    ast =
+      case ast do
+        %Context{} ->
+          ast.ast
+
+        %Ast{} ->
+          ast
+      end
+
+    reduced_ast =
+      case reduced_ast do
+        %Context{} ->
+          reduced_ast.ast
+
+        %Ast{} ->
+          reduced_ast
+      end
+
     %__MODULE__{
       message: """
       #{inspect ast} can be reduced to #{inspect reduced_ast} and remain equivalent.

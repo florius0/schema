@@ -362,10 +362,10 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   def validate! do
     Graph.vertices()
     |> Enum.each(fn hash ->
-      {^hash, context} = Graph.vertex(hash)
+      {^hash, context_or_ast} = Graph.vertex(hash)
 
-      unless Apix.Schema.get_schema(context) do
-        raise UndefinedReferenceAstError, context.ast
+      unless match?(%Ast{parameter?: true}, context_or_ast) or Apix.Schema.get_schema(context_or_ast) do
+        raise UndefinedReferenceAstError, context_or_ast
       end
     end)
   end

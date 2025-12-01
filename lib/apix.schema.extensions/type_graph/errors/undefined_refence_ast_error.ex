@@ -1,6 +1,7 @@
 defmodule Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError do
   alias Apix.Schema.Ast
   alias Apix.Schema.Ast.Meta
+  alias Apix.Schema.Context
 
   @moduledoc """
   `#{inspect __MODULE__}` is raised when operating on `t:#{inspect Ast}.t/0` which has an undefined reference, e.g.:
@@ -26,6 +27,8 @@ defmodule Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError do
   defexception [:message, :ast, :meta]
 
   @impl Exception
+  def exception(%Context{} = context), do: exception(context.ast)
+
   def exception(%Ast{} = ast) do
     %__MODULE__{
       message: """

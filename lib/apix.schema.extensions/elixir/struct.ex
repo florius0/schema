@@ -7,7 +7,7 @@ defmodule Apix.Schema.Extensions.Elixir.Struct do
     validate is_struct(it)
   end
 
-  schema t: t(), params: [:struct] do
+  schema t: t(), params: [:fields] do
     validate is_struct(it, struct() |> Const.value())
   end
 end

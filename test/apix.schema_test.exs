@@ -118,6 +118,27 @@ defmodule Apix.SchemaTest do
              } = TestSchema4.__apix_schemas__()
     end
 
+    test "schema/2 | sets flags" do
+      defmodule TestSchema5 do
+        use Apix.Schema
+
+        schema a: Any.t(), other: :other do
+        end
+      end
+
+      assert %{
+               {Apix.SchemaTest.TestSchema5, :a, 0} => %Apix.Schema.Context{
+                 ast: %Apix.Schema.Ast{},
+                 module: Apix.SchemaTest.TestSchema5,
+                 schema: :a,
+                 params: [],
+                 warnings: [],
+                 errors: [],
+                 flags: [other: :other]
+               }
+             } = TestSchema5.__apix_schemas__()
+    end
+
     test "equals?/2" do
       ast = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
       other = %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: [], flags: [other: :other]}

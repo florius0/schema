@@ -160,15 +160,16 @@ defmodule Apix.Schema.Context do
 
   See `expression!/4`.
   """
-  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), Macro.Env.t()) :: t()
-  def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, elixir_do_block_ast, env) do
+  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), keyword(), Macro.t(), Macro.Env.t()) :: t()
+  def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, flags, elixir_do_block_ast, env) do
     env = Code.env_for_eval(env)
 
     context
     |> struct(
       module: env.module,
       schema: schema_name,
-      params: normalize_params!(context, params, env)
+      params: normalize_params!(context, params, env),
+      flags: flags
     )
     |> map_ast(&expression!(&1, elixir_type_ast, env))
     |> map_ast(&expression!(&1, elixir_do_block_ast, env))

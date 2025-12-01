@@ -131,8 +131,17 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   def get_path_by(source, target, edge_predicate \\ fn _ -> true end, vertex_predicate \\ fn _ -> true end) do
     ensure!()
     GenServer.call(__MODULE__, {:get_path_by, source, target, edge_predicate, vertex_predicate})
+  end
+
+  @doc """
+  Like `:digraph.cyclic_strong_components/3`, but only traverses vertices/edges filtered by predicates.
+
+  Returns list of strong components
+  """
+  @spec cyclic_strong_components_by(edge_predicate(), vertex_predicate()) :: [[:digraph.vertex()]]
+  def cyclic_strong_components_by(edge_predicate \\ fn _ -> true end, vertex_predicate \\ fn _ -> true end) do
     ensure!()
-    GenServer.call(__MODULE__, {:get_path_by, source, target, predicate})
+    GenServer.call(__MODULE__, {:cyclic_strong_components_by, edge_predicate, vertex_predicate})
   end
 
   # GenServer
@@ -195,6 +204,14 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
     {subgraph, state} = subgraph_by(state, edge_predicate, vertex_predicate)
 
     reply = :digraph.get_path(subgraph, source, target)
+
+    {:reply, reply, state}
+  end
+
+  def handle_call({:cyclic_strong_components_by, edge_predicate, vertex_predicate}, _from, state) do
+    {subgraph, state} = subgraph_by(state, edge_predicate, vertex_predicate)
+
+    reply = :digraph_utils.cyclic_strong_components(subgraph)
 
     {:reply, reply, state}
   end

@@ -362,6 +362,24 @@ defmodule Apix.Schema.Extensions.TypeGraph do
         raise UndefinedReferenceAstError, context_or_ast
       end
     end)
+
+    Graph.cyclic_strong_components_by(&(&1 == :references))
+    |> Enum.each(fn [hash | _] = component ->
+      component
+      |> Enum.all?(fn v ->
+        v
+        |> Graph.out_edges()
+        |> Enum.filter(&match?({_from, _to, :references}, &1))
+        |> Enum.map(&elem(&1, 1))
+        |> Kernel.--(component)
+        |> Kernel.==([])
+      end)
+      |> if do
+        {^hash, context_or_ast} = Graph.vertex(hash)
+
+        raise FullyRecursiveAstError, context_or_ast
+      end
+    end)
   end
 
   @doc group: "Internal"

@@ -6,9 +6,12 @@ defmodule Apix.Schema.Case do
   @moduledoc false
 
   setup do
+    clean()
+    :ok
+  end
+
+  def clean do
     Graph.vertices()
     |> Graph.del_vertices()
-
-    :ok
   end
 end

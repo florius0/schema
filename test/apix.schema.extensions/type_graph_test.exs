@@ -495,18 +495,38 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
     end
 
     test "#{inspect FullyRecursiveAstError}" do
-      defmodule TestSchema18 do
-        use Apix.Schema
+      exception =
+        assert_raise FullyRecursiveAstError, fn ->
+          defmodule TestSchema18 do
+            use Apix.Schema
 
-        schema a: a()
-      end
+            schema a: a()
+          end
+        end
 
-      defmodule TestSchema19 do
-        use Apix.Schema
+      assert %FullyRecursiveAstError{
+               ast: %Ast{module: Apix.Schema.Extensions.TypeGraphTest.TestSchema18, schema: :a, args: []},
+               meta: %Meta{}
+             } = exception
 
-        schema a: b()
-        schema b: a()
-      end
+      Apix.Schema.Case.clean()
+
+      exception =
+        assert_raise FullyRecursiveAstError, fn ->
+          defmodule TestSchema19 do
+            use Apix.Schema
+
+            schema a: b()
+            schema b: a()
+          end
+        end
+
+      assert %FullyRecursiveAstError{
+               ast: %Ast{module: Apix.Schema.Extensions.TypeGraphTest.TestSchema19, schema: :a, args: []},
+               meta: %Meta{}
+             } = exception
+
+      Apix.Schema.Case.clean()
 
       defmodule TestSchema20 do
         use Apix.Schema

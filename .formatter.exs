@@ -20,8 +20,8 @@ locals_without_parens = [
   ],
   locals_without_parens:
     [
-      inspect: 1,
-      inspect: 2
+      inspect: :*,
+      capture_io: :*
     ] ++ locals_without_parens,
   inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}"],
   line_length: 200

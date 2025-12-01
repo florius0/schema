@@ -4,10 +4,14 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
 
+  alias Apix.Schema.Warning
+
   alias Apix.Schema.Extensions.TypeGraph.Graph
 
   alias Apix.Schema.Extensions.TypeGraph.Errors.FullyRecursiveAstError
   alias Apix.Schema.Extensions.TypeGraph.Errors.UndefinedReferenceAstError
+
+  alias Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning
 
   @manifest %Extension{
     module: __MODULE__
@@ -367,6 +371,11 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   """
   @spec validate!() :: :ok | no_return()
   def validate! do
+    validate_undefined_reference!()
+    validate_fully_recursive!()
+  end
+
+  defp validate_undefined_reference! do
     Graph.vertices()
     |> Enum.each(fn hash ->
       {^hash, context_or_ast} = Graph.vertex(hash)
@@ -375,7 +384,9 @@ defmodule Apix.Schema.Extensions.TypeGraph do
         raise UndefinedReferenceAstError, context_or_ast
       end
     end)
+  end
 
+  defp validate_fully_recursive! do
     Graph.cyclic_strong_components_by(&(&1 == :references))
     |> Enum.each(fn [hash | _] = component ->
       component
@@ -407,6 +418,17 @@ defmodule Apix.Schema.Extensions.TypeGraph do
         raise FullyRecursiveAstError, context_or_ast
       end
     end)
+  end
+
+  defp validate_reducible!(context) do
+    ast = context.ast
+    reduced_ast = Context.normalize_ast!(context)
+
+    unless Ast.equals?(ast, reduced_ast) do
+      [ast: ast, reduced_ast: reduced_ast]
+      |> ReducibleAstWarning.exception()
+      |> Warning.print()
+    end
   end
 
   @doc group: "Internal"
@@ -592,6 +614,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   @impl Extension
   def validate_ast!(context) do
     track!(context)
+    validate_reducible!(context)
     on_compilation!()
 
     context

@@ -1,6 +1,8 @@
 defmodule Apix.Schema.Extensions.TypeGraphTest do
   use Apix.Schema.Case
 
+  import ExUnit.CaptureIO
+
   alias Apix.Schema.Extensions.TypeGraph
 
   alias Apix.Schema.Extensions.TypeGraph.Errors.FullyRecursiveAstError
@@ -611,11 +613,16 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
     end
 
     test "#{inspect ReducibleAstWarning}" do
-      defmodule TestSchema24 do
-        # use Apix.Schema
+      warning =
+        capture_io :stderr, fn ->
+          defmodule TestSchema24 do
+            use Apix.Schema
 
-        # schema a: Any.t() or Any.t()
-      end
+            schema a: Any.t() or Any.t()
+          end
+        end
+
+      assert warning =~ "can be reduced"
     end
   end
 end

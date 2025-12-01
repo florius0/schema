@@ -73,6 +73,19 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       - `relationship &Module.function/3` – uses 3-arity remote function capture
       - `relationship &function/3` – uses 3-arity local function capture
       - `relationship {Module, :function, args}` – uses MFA tuple to reference function. `args` will be appended to `[it, peer, existing]` when calling the function.
+
+  ## Flags
+
+  This extension uses the following flags:
+
+  - `:recursion` – to determine recursion evaluation strategy:
+    - `:all` (default)  means that `#{inspect Context}.t/0`/`#{inspect Ast}.t/0` must reference only other recursive definitions to be considered recursive.
+
+       Intended to be used for scalar types or container types with single type parameter semantics, such as `#{inspect Apix.Schema.Extensions.Elixir.MapSet}.t/0`
+
+    - `:at_least_one` means that `#{inspect Context}.t/0`/`#{inspect Ast}.t/0` must reference at least one other recursive definition to be considered recursive.
+
+       Intended to be used for container types with multiple fields type parameters semantics, such as `#{inspect Apix.Schema.Extensions.Elixir.Map}.t/0`
   """
 
   @behaviour Extension
@@ -279,7 +292,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @doc group: "Internal"
   @doc """
-  Prunes graph of non-existent of stale `%#{inspect Context}`'s.
+  Prunes graph of non-existent of stale `#{inspect Context}.t/0`.
 
   Intended to be called after either all code is compiled or on hot reloads before `validate!/0`.
   """
@@ -366,13 +379,27 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     Graph.cyclic_strong_components_by(&(&1 == :references))
     |> Enum.each(fn [hash | _] = component ->
       component
-      |> Enum.all?(fn v ->
-        v
-        |> Graph.out_edges()
-        |> Enum.filter(&match?({_from, _to, :references}, &1))
-        |> Enum.map(&elem(&1, 1))
-        |> Kernel.--(component)
-        |> Kernel.==([])
+      |> Enum.all?(fn hash ->
+        {^hash, context_or_ast} = Graph.vertex(hash)
+
+        strategy =
+          Apix.Schema.get_schema(context_or_ast).flags[:recursion]
+          |> get_in()
+          |> Kernel.||(:all)
+
+        referenced =
+          hash
+          |> Graph.out_edges()
+          |> Enum.filter(&match?({_from, _to, :references}, &1))
+          |> Enum.map(&elem(&1, 1))
+
+        case strategy do
+          :all ->
+            referenced -- component == []
+
+          :at_least_one ->
+            referenced -- component != referenced
+        end
       end)
       |> if do
         {^hash, context_or_ast} = Graph.vertex(hash)

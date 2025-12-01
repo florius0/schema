@@ -509,6 +509,8 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
                meta: %Meta{}
              } = exception
 
+      assert Exception.message(exception) =~ "is fully recursive"
+
       Apix.Schema.Case.clean()
 
       exception =
@@ -526,12 +528,66 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
                meta: %Meta{}
              } = exception
 
+      assert Exception.message(exception) =~ "is fully recursive"
+
       Apix.Schema.Case.clean()
 
-      defmodule TestSchema20 do
+      exception =
+        assert_raise FullyRecursiveAstError, fn ->
+          defmodule TestSchema20 do
+            use Apix.Schema
+
+            schema a: Map.t() do
+              field :a, a()
+            end
+          end
+        end
+
+      assert %FullyRecursiveAstError{
+               ast: %Ast{module: Apix.Schema.Extensions.Elixir.Map, schema: :t, args: [_]},
+               meta: %Meta{}
+             } = exception
+
+      assert Exception.message(exception) =~ "is fully recursive"
+
+      Apix.Schema.Case.clean()
+
+      exception =
+        assert_raise FullyRecursiveAstError, fn ->
+          defmodule TestSchema21 do
+            use Apix.Schema
+
+            schema a: Map.t() do
+              field :a, Map.t() do
+                field :a, a()
+              end
+            end
+          end
+        end
+
+      assert %FullyRecursiveAstError{
+               ast: %Ast{module: Apix.Schema.Extensions.Elixir.Map, schema: :t, args: [_]},
+               meta: %Meta{}
+             } = exception
+
+      assert Exception.message(exception) =~ "is fully recursive"
+
+      Apix.Schema.Case.clean()
+
+      defmodule TestSchema22 do
         use Apix.Schema
 
         schema a: a() or Any.t()
+
+        schema b: Map.t() do
+          field :b, b() or Any.t()
+        end
+
+        schema c: Map.t() do
+          field :c, Map.t() do
+            field :c, c() or Any.t()
+          end
+        end
       end
     end
 
@@ -539,7 +595,7 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
       exception =
         assert_raise UndefinedReferenceAstError,
                      fn ->
-                       defmodule TestSchema21 do
+                       defmodule TestSchema23 do
                          use Apix.Schema
 
                          schema a: b()
@@ -547,7 +603,7 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
                      end
 
       assert %UndefinedReferenceAstError{
-               ast: %Ast{module: Apix.Schema.Extensions.TypeGraphTest.TestSchema21, schema: :b, args: []},
+               ast: %Ast{module: Apix.Schema.Extensions.TypeGraphTest.TestSchema23, schema: :b, args: []},
                meta: %Meta{}
              } = exception
 
@@ -555,7 +611,7 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
     end
 
     test "#{inspect ReducibleAstWarning}" do
-      defmodule TestSchema22 do
+      defmodule TestSchema24 do
         # use Apix.Schema
 
         # schema a: Any.t() or Any.t()

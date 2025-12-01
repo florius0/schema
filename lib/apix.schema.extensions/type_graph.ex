@@ -89,16 +89,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     subtype = to_vertex(subtype)
     supertype = to_vertex(supertype)
 
-    cond do
-      subtype == supertype ->
-        true
-
-      Graph.get_path_by(subtype, supertype, &(&1 == :not_subtype)) ->
-        false
-
-      true ->
-        !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
-    end
+    subtype == supertype or !!Graph.get_path_by(supertype, subtype, &(&1 == :subtype))
   end
 
   @doc """
@@ -113,16 +104,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     supertype = to_vertex(supertype)
     subtype = to_vertex(subtype)
 
-    cond do
-      supertype == subtype ->
-        true
-
-      Graph.get_path_by(subtype, supertype, &(&1 == :not_supertype)) ->
-        false
-
-      true ->
-        !!Graph.get_path_by(supertype, subtype, &(&1 == :supertype))
-    end
+    supertype == subtype or !!Graph.get_path_by(supertype, subtype, &(&1 == :supertype))
   end
 
   @doc """

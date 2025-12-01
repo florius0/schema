@@ -16,6 +16,8 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
 
   @filename "#{__MODULE__}.etf"
 
+  @mutating_functions [:new, :add_edge, :add_vertex, :del_edge, :del_edges, :del_path, :del_vertex, :del_vertices]
+
   @typedoc """
   Struct to hold the state.
 
@@ -28,12 +30,40 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   @type t() :: %__MODULE__{
           format: non_neg_integer(),
           version: non_neg_integer(),
-          digraph: :digraph.graph() | nil
+          digraph: :digraph.graph() | nil,
+          subgraphs: %{{fun(), fun()} => :digraph.graph()}
         }
+
+  @typedoc """
+  Predicate to filter vertices on.
+
+  Can have arity 1 or 2:
+    - `fn label -> boolean end`
+    - `fn vertex, label -> boolean end`
+  """
+  @type vertex_predicate() ::
+          (:digraph.label() -> boolean())
+          | (:digraph.vertex(), :digraph.label() -> boolean())
+
+  @typedoc """
+  Predicate to filter edges on.
+
+  Can have arity 1, 2, 3 or 4:
+    - `fn label -> boolean end`
+    - `fn from, to -> boolean end`
+    - `fn from, to, label -> boolean end`
+    - `fn edge, from, to, label -> boolean end`
+  """
+  @type edge_predicate() ::
+          (:digraph.label() -> boolean())
+          | (:digraph.vertex(), :digraph.vertex() -> boolean())
+          | (:digraph.vertex(), :digraph.vertex(), :digraph.label() -> boolean())
+          | (:digraph.edge(), :digraph.vertex(), :digraph.vertex(), :digraph.label() -> boolean())
 
   defstruct format: @format,
             version: 0,
-            digraph: nil
+            digraph: nil,
+            subgraphs: %{}
 
   @doc """
   Ensures unlinked instance is started.
@@ -93,25 +123,14 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   end
 
   @doc """
-  Like `:digraph.get_path/3`, but only traverses edges for which `predicate` returns `true`.
-
-  `predicate` can have arity 1, 3, or 4:
-    - `fn label -> boolean end`
-    - `fn from, to -> boolean end`
-    - `fn from, to, label -> boolean end`
-    - `fn edge, from, to, label -> boolean end`
+  Like `:digraph.get_path/3`, but only traverses vertices/edges filtered by predicates.
 
   Returns `false` if no path exists, or a list of vertices `[v1, ..., vn]` otherwise.
   """
-  @spec get_path_by(
-          :digraph.vertex(),
-          :digraph.vertex(),
-          (:digraph.label() -> boolean())
-          | (:digraph.vertex(), :digraph.vertex() -> boolean())
-          | (:digraph.vertex(), :digraph.vertex(), :digraph.label() -> boolean())
-          | (:digraph.edge(), :digraph.vertex(), :digraph.vertex(), :digraph.label() -> boolean())
-        ) :: false | [:digraph.edge()]
-  def get_path_by(source, target, predicate) when is_function(predicate, 1) or is_function(predicate, 2) or is_function(predicate, 3) or is_function(predicate, 4) do
+  @spec get_path_by(:digraph.vertex(), :digraph.vertex(), edge_predicate(), vertex_predicate()) :: false | [:digraph.edge()]
+  def get_path_by(source, target, edge_predicate \\ fn _ -> true end, vertex_predicate \\ fn _ -> true end) do
+    ensure!()
+    GenServer.call(__MODULE__, {:get_path_by, source, target, edge_predicate, vertex_predicate})
     ensure!()
     GenServer.call(__MODULE__, {:get_path_by, source, target, predicate})
   end
@@ -153,6 +172,10 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   def handle_call({:digraph, fun, args}, _from, state) do
     reply = apply(:digraph, fun, [state.digraph | args])
 
+    if fun in @mutating_functions,
+      do: struct(state, subgraphs: %{}),
+      else: state
+
     {:reply, reply, state}
   end
 
@@ -168,9 +191,12 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
     {:reply, reply, state}
   end
 
-  def handle_call({:get_path_by, source, target, predicate}, _from, state) do
-    path = do_get_path_by(state.digraph, source, target, predicate)
-    {:reply, path, state}
+  def handle_call({:get_path_by, source, target, edge_predicate, vertex_predicate}, _from, state) do
+    {subgraph, state} = subgraph_by(state, edge_predicate, vertex_predicate)
+
+    reply = :digraph.get_path(subgraph, source, target)
+
+    {:reply, reply, state}
   end
 
   @impl GenServer
@@ -239,63 +265,34 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
     {:ok, %__MODULE__{digraph: digraph}}
   end
 
-  defp do_get_path_by(_g, v, v, _predicate), do: [v]
+  defp subgraph_by(state, edge_predicate, vertex_predicate) do
+    subgraph = :digraph.new()
+    state = put_in(state.subgraphs[{edge_predicate, vertex_predicate}], subgraph)
 
-  defp do_get_path_by(g, source, target, predicate) do
-    # Ensure both vertices exist (match :digraph.get_path/3 behavior)
-    with {^source, _} <- :digraph.vertex(g, source) || :error,
-         {^target, _} <- :digraph.vertex(g, target) || :error do
-      bfs_with_edge_filter(g, source, target, predicate)
-    else
-      _ -> false
-    end
-  end
-
-  defp bfs_with_edge_filter(g, source, target, predicate) do
-    queue = :queue.from_list([source])
-    visited = MapSet.new([source])
-    prev = %{source => nil}
-
-    do_bfs(g, target, predicate, queue, visited, prev)
-  end
-
-  defp do_bfs(g, target, predicate, queue, visited, prev) do
-    case :queue.out(queue) do
-      {:empty, _} ->
-        false
-
-      {{:value, v}, queue1} ->
-        if v == target do
-          reconstruct_path(prev, v)
-        else
-          {queue2, visited2, prev2} = expand_neighbours(g, v, predicate, queue1, visited, prev)
-          do_bfs(g, target, predicate, queue2, visited2, prev2)
-        end
-    end
-  end
-
-  defp expand_neighbours(g, v, predicate, queue, visited, prev) do
-    Enum.reduce(:digraph.out_edges(g, v), {queue, visited, prev}, fn e, {q, vis, pr} ->
-      {^e, from, to, label} = :digraph.edge(g, e)
-
-      if edge_passes?(predicate, e, from, to, label) and not MapSet.member?(vis, to),
-        do: {:queue.in(to, q), MapSet.put(vis, to), Map.put(pr, to, from)},
-        else: {q, vis, pr}
+    state.digraph
+    |> :digraph.vertices()
+    |> Enum.map(&:digraph.vertex(state.digraph, &1))
+    |> Enum.each(fn {vertex, label} ->
+      if filter_vertex?(vertex_predicate, vertex, label),
+        do: :digraph.add_vertex(subgraph, vertex, label)
     end)
+
+    state.digraph
+    |> :digraph.edges()
+    |> Enum.map(&:digraph.edge(state.digraph, &1))
+    |> Enum.each(fn {edge, from, to, label} ->
+      if filter_edge?(edge_predicate, edge, from, to, label) && :digraph.vertex(state.digraph, from) && :digraph.vertex(state.digraph, to),
+        do: :digraph.add_edge(subgraph, edge, from, to, label)
+    end)
+
+    {subgraph, state}
   end
 
-  defp edge_passes?(predicate, _e, _from, _to, label) when is_function(predicate, 1), do: predicate.(label)
-  defp edge_passes?(predicate, _e, from, to, _label) when is_function(predicate, 2), do: predicate.(from, to)
-  defp edge_passes?(predicate, _e, from, to, label) when is_function(predicate, 3), do: predicate.(from, to, label)
-  defp edge_passes?(predicate, e, from, to, label) when is_function(predicate, 4), do: predicate.(e, from, to, label)
+  defp filter_vertex?(predicate, _vertex, label) when is_function(predicate, 1), do: predicate.(label)
+  defp filter_vertex?(predicate, vertex, label) when is_function(predicate, 2), do: predicate.(vertex, label)
 
-  defp reconstruct_path(prev, v), do: do_reconstruct(prev, v, []) |> Enum.reverse()
-
-  defp do_reconstruct(prev, v, acc) do
-    case Map.fetch(prev, v) do
-      {:ok, nil} -> [v | acc]
-      {:ok, p} -> do_reconstruct(prev, p, [v | acc])
-      :error -> false
-    end
-  end
+  defp filter_edge?(predicate, _e, _from, _to, label) when is_function(predicate, 1), do: predicate.(label)
+  defp filter_edge?(predicate, _e, from, to, _label) when is_function(predicate, 2), do: predicate.(from, to)
+  defp filter_edge?(predicate, _e, from, to, label) when is_function(predicate, 3), do: predicate.(from, to, label)
+  defp filter_edge?(predicate, e, from, to, label) when is_function(predicate, 4), do: predicate.(e, from, to, label)
 end

@@ -210,6 +210,8 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   @doc false
   def default_relationship(_it, _peer, existing), do: existing
 
+  defp filter_empty({_type, nil = _left, _right} = _relation), do: false
+  defp filter_empty({_type, _left, nil = _right} = _relation), do: false
   defp filter_empty({_type, %Ast{module: nil, schema: nil, args: []} = _left, _right} = _relation), do: false
   defp filter_empty({_type, %Context{module: nil, schema: nil, params: []} = _left, _right} = _relation), do: false
   defp filter_empty({_type, _left, %Ast{module: nil, schema: nil, args: []} = _right} = _relation), do: false
@@ -242,27 +244,37 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   def track!(context_or_ast) when is_struct(context_or_ast, Context) or is_struct(context_or_ast, Ast) do
     context = Apix.Schema.get_schema(context_or_ast)
 
-    vertex = Apix.Schema.hash(context)
-    vertex_label = context
+    context.ast
+    |> Ast.traverse(
+      {
+        [context],
+        [
+          {:references, context, context.ast},
+          {:referenced, context, context.ast}
+        ]
+      },
+      fn
+        ast, {[parent | _rest] = stack, acc} ->
+          context = Apix.Schema.get_schema(ast)
 
-    Graph.add_vertex(vertex, vertex_label)
+          references = [
+            {:references, parent, ast},
+            {:referenced, ast, parent},
+            {:references, ast, context},
+            {:referenced, context, ast}
+          ]
 
-    Ast.prewalk(context.ast, fn
-      %Ast{module: nil} = ast ->
-        ast
-
-      ast ->
-        context_vertex_label = Apix.Schema.get_schema(ast) || Apix.Schema.add_flags(ast, :maybe_undefined)
-        context_vertex = Apix.Schema.hash(context_vertex_label)
-
-        Graph.add_vertex(context_vertex, context_vertex_label)
-        Graph.add_edge({vertex, context_vertex, :references}, vertex, context_vertex, :references)
-        Graph.add_edge({context_vertex, vertex, :referenced}, context_vertex, vertex, :referenced)
-
-        ast
-    end)
-
-    :ok
+          {ast, {[ast | stack], references ++ acc}}
+      end,
+      fn
+        ast, {[ast | stack], acc} -> {ast, {stack, acc}}
+        ast, {stack, acc} -> {ast, {stack, acc}}
+      end
+    )
+    |> elem(1)
+    |> elem(1)
+    |> Enum.filter(&filter_empty/1)
+    |> add_relations()
   end
 
   @doc group: "Internal"
@@ -400,7 +412,10 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     context_or_ast
     |> Context.normalize_ast!()
     |> Ast.traverse(
-      {[context_or_ast], relate(context_or_ast, context_or_ast)},
+      {
+        [context_or_ast],
+        relate(context_or_ast, context_or_ast)
+      },
       fn
         ast, {[parent | _rest] = stack, acc} ->
           context = Apix.Schema.get_schema(ast)
@@ -421,14 +436,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     )
     |> elem(1)
     |> elem(1)
-    |> Enum.each(fn {kind, left, right} ->
-      lv = Apix.Schema.hash(left)
-      rv = Apix.Schema.hash(right)
-
-      Graph.add_vertex(lv, left)
-      Graph.add_vertex(rv, right)
-      Graph.add_edge({lv, rv, kind}, lv, rv, kind)
-    end)
+    |> add_relations()
   end
 
   @doc group: "Internal"
@@ -438,10 +446,12 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   def build_type_relationships!(context_or_ast, peers, existing) do
     new = Enum.reduce(peers, existing, &relationship(context_or_ast, &1, &2))
 
-    add = new -- existing
-    delete = existing -- new
+    add_relations(new -- existing)
+    delete_relations(existing -- new)
+  end
 
-    Enum.each(add, fn {kind, left, right} ->
+  defp add_relations(relations) do
+    Enum.each(relations, fn {kind, left, right} ->
       lv = Apix.Schema.hash(left)
       rv = Apix.Schema.hash(right)
 
@@ -449,8 +459,10 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       Graph.add_vertex(rv, right)
       Graph.add_edge({lv, rv, kind}, lv, rv, kind)
     end)
+  end
 
-    Enum.each(delete, fn {kind, left, right} ->
+  defp delete_relations(relations) do
+    Enum.each(relations, fn {kind, left, right} ->
       lv = Apix.Schema.hash(left)
       rv = Apix.Schema.hash(right)
 

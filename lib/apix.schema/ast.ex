@@ -114,7 +114,9 @@ defmodule Apix.Schema.Ast do
   end
 
   def traverse(list, acc, pre, post) when is_list(list) and is_function(pre, 2) and is_function(post, 2) do
-    Enum.reduce(list, {[], acc}, fn arg, {args, acc} ->
+    list
+    |> Enum.reverse()
+    |> Enum.reduce({[], acc}, fn arg, {args, acc} ->
       {arg, acc} = traverse(arg, acc, pre, post)
       {[arg | args], acc}
     end)

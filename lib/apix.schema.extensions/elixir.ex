@@ -165,13 +165,13 @@ defmodule Apix.Schema.Extensions.Elixir do
 
   @impl Extension
   def expression!(context, {:item, _, elixir_ast}, schema_ast, env, _literal?) do
-    type = inner_expression!(context, elixir_ast, %Ast{}, env)
+    type = Context.inner_expression!(context, elixir_ast, %Ast{}, env)
 
     Ast.add_keyword_args(schema_ast, item: type)
   end
 
   def expression!(context, {:rest, _, elixir_ast}, schema_ast, env, _literal?) do
-    type = inner_expression!(context, elixir_ast, %Ast{}, env)
+    type = Context.inner_expression!(context, elixir_ast, %Ast{}, env)
 
     Ast.add_keyword_args(schema_ast, rest: type)
   end
@@ -185,9 +185,9 @@ defmodule Apix.Schema.Extensions.Elixir do
         } = Enum.split(elixir_ast, -1)
 
         {
-          inner_expression!(context, key_elixir_ast, %Ast{}, env),
+          Context.inner_expression!(context, key_elixir_ast, %Ast{}, env),
           context
-          |> inner_expression!(value_elixir_ast, %Ast{}, env)
+          |> Context.inner_expression!(value_elixir_ast, %Ast{}, env)
           |> struct(flags: Elixir.List.flatten(flags))
         }
       else
@@ -197,8 +197,8 @@ defmodule Apix.Schema.Extensions.Elixir do
         ] = elixir_ast
 
         {
-          inner_expression!(context, [key_elixir_ast], %Ast{}, env),
-          inner_expression!(context, value_elixir_ast, %Ast{}, env)
+          Context.inner_expression!(context, [key_elixir_ast], %Ast{}, env),
+          Context.inner_expression!(context, value_elixir_ast, %Ast{}, env)
         }
       end
 
@@ -206,35 +206,4 @@ defmodule Apix.Schema.Extensions.Elixir do
   end
 
   def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false
-
-  @doc false
-  def inner_expression!(context, [type_elixir_ast], schema_ast, env) do
-    Context.expression!(context, type_elixir_ast, schema_ast, env)
-  end
-
-  def inner_expression!(context, [type_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
-    schema_ast = Context.expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = Context.expression!(context, block_elixir_ast, schema_ast, env)
-
-    schema_ast
-  end
-
-  def inner_expression!(context, [type_elixir_ast, flags_elixir_ast], schema_ast, env) do
-    {flags, _, _} = Code.eval_quoted_with_env(flags_elixir_ast, [], env)
-
-    schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
-    schema_ast = Context.expression!(context, type_elixir_ast, schema_ast, env)
-
-    schema_ast
-  end
-
-  def inner_expression!(context, [type_elixir_ast, flags_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
-    {flags, _, _} = Code.eval_quoted_with_env(flags_elixir_ast, [], env)
-
-    schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
-    schema_ast = Context.expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = Context.expression!(context, block_elixir_ast, schema_ast, env)
-
-    schema_ast
-  end
 end

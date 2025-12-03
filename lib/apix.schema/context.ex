@@ -176,6 +176,60 @@ defmodule Apix.Schema.Context do
   end
 
   @doc """
+  Handles additional syntax of inner expressions.
+
+  Supported additional syntax:
+
+  ```elixir
+  use Apix.Schema
+
+  schema a: _ do
+    outer_expression [ ... ], [ schema ] Some.t([ ... ]) [ , flags: :flags ] [ , do: ...]
+    outer_expression [ ... ], [ schema ] Some.t([ ... ]) [ , flags: :flags ] [ do ... end]
+  end
+  ```.
+
+  Regular `expression!/4` only supports `Some.t([ ... ])`.
+
+  See `expression!/4` and `#{inspect Apix.Schema.Extensions.Elixir}.expression!/6` for usage examples.
+  """
+  @spec inner_expression!(t(), Macro.t(), Ast.t(), Macro.Env.t()) :: Ast.t()
+  def inner_expression!(context, {type_elixir_ast, _meta, [[do: block_elixir_ast]]}, schema_ast, env) do
+    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+
+    schema_ast
+  end
+
+  def inner_expression!(context, [type_elixir_ast], schema_ast, env), do: expression!(context, type_elixir_ast, schema_ast, env)
+
+  def inner_expression!(context, [type_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
+    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+
+    schema_ast
+  end
+
+  def inner_expression!(context, [type_elixir_ast, flags_elixir_ast], schema_ast, env) do
+    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, [], env)
+
+    schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
+    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+
+    schema_ast
+  end
+
+  def inner_expression!(context, [type_elixir_ast, flags_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
+    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, [], env)
+
+    schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
+    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+
+    schema_ast
+  end
+
+  @doc """
   TODO: Casts types.
   """
   @spec cast(t()) :: t()

@@ -112,7 +112,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: And,
       schema: :t,
-      args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
+      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
     )
   end
 
@@ -120,7 +120,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: Or,
       schema: :t,
-      args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
+      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
     )
   end
 
@@ -128,7 +128,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: Not,
       schema: :t,
-      args: [Context.expression!(context, args, schema_ast, env)]
+      args: [Context.inner_expression!(context, args, schema_ast, env)]
     )
   end
 
@@ -137,7 +137,7 @@ defmodule Apix.Schema.Extensions.Core do
   end
 
   def expression!(_context, elixir_ast, schema_ast, env, true) do
-    {arg, _, _} = Code.eval_quoted_with_env(elixir_ast, [], env)
+    {arg, _binding} = Code.eval_quoted(elixir_ast, [], env)
 
     struct(schema_ast,
       module: Const,
@@ -150,7 +150,7 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast,
       module: Macro.expand(module, env),
       schema: schema,
-      args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
+      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
     )
   end
 
@@ -160,23 +160,20 @@ defmodule Apix.Schema.Extensions.Core do
 
   def expression!(context, {name, _, args}, schema_ast, env, false) do
     args = args || []
-    len_args = length(args)
+    arity = length(args)
 
-    context.params
-    |> Enum.any?(fn
-      {^name, ^len_args, _} -> true
-      _ -> false
-    end)
-    |> if do
+    Enum.find_value(context.params, fn
+      {^name, ^arity, _} ->
       struct(schema_ast,
         module: nil,
         schema: name,
-        args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env)),
+          args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env)),
         parameter?: true
       )
-    else
+
+      _ ->
       false
-    end
+    end)
   end
 
   def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false

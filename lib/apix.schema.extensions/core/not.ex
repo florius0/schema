@@ -7,7 +7,7 @@ defmodule Apix.Schema.Extensions.Core.Not do
   @moduledoc false
 
   schema t: _, params: [:schema] do
-    validate not valid?(it, schema)
+    validate not valid?(it, schema())
 
     relate %Context{module: __MODULE__, schema: :t, params: [_schema]} = _it, _to, do: []
     relate _it, %Context{module: __MODULE__, schema: :t, params: [_schema]} = _to, do: []

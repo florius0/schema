@@ -194,6 +194,39 @@ defmodule Apix.Schema.Context do
   See `expression!/4` and `#{inspect Apix.Schema.Extensions.Elixir}.expression!/6` for usage examples.
   """
   @spec inner_expression!(t(), Macro.t(), Ast.t(), Macro.Env.t()) :: Ast.t()
+  def inner_expression!(context, {:schema, _meta, [type_elixir_ast]}, schema_ast, env), do: expression!(context, type_elixir_ast, schema_ast, env)
+
+  def inner_expression!(context, {:schema, _meta, [type_elixir_ast, params]}, schema_ast, env) do
+    block_elixir_ast = params[:do] || {:__block__, [], []}
+    flags = Keyword.drop(params, [:params, :do])
+
+    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+
+    schema_ast =
+      struct(schema_ast,
+        params: normalize_params!(context, params, env),
+        flags: flags
+      )
+
+    schema_ast
+  end
+
+  def inner_expression!(context, {:schema, _meta, [type_elixir_ast, params, [do: block_elixir_ast]]}, schema_ast, env) do
+    flags = Keyword.drop(params, [:params, :do])
+
+    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+
+    schema_ast =
+      struct(schema_ast,
+        params: normalize_params!(context, params, env),
+        flags: flags
+      )
+
+    schema_ast
+  end
+
   def inner_expression!(context, {type_elixir_ast, _meta, [[do: block_elixir_ast]]}, schema_ast, env) do
     schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
     schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
@@ -228,6 +261,8 @@ defmodule Apix.Schema.Context do
 
     schema_ast
   end
+
+  def inner_expression!(context, type_elixir_ast, schema_ast, env), do: expression!(context, type_elixir_ast, schema_ast, env)
 
   @doc """
   TODO: Casts types.

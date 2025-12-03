@@ -46,7 +46,7 @@ defmodule Apix.Schema do
     quote do
       import Apix.Schema, only: [schema: 1, schema: 2]
 
-      unquote(Context.require(context))
+      unquote(Context.require!(context))
 
       @before_compile unquote(__MODULE__)
       @after_compile unquote(__MODULE__)

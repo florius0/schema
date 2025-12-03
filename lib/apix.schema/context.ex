@@ -106,8 +106,8 @@ defmodule Apix.Schema.Context do
 
   See `#{inspect Extension}.require/1`.
   """
-  @spec require(t()) :: Macro.t()
-  def require(%__MODULE__{} = context), do: Enum.map(context.extensions, &Extension.require/1)
+  @spec require!(t()) :: Macro.t()
+  def require!(%__MODULE__{} = context), do: Enum.map(context.extensions, &Extension.require!/1)
 
   @doc """
   Validates AST through all extensions.

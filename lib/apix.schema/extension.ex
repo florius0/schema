@@ -70,6 +70,13 @@ defmodule Apix.Schema.Extension do
   @callback install!(Context.t()) :: Context.t()
 
   @doc """
+  Optional callback to `#{inspect Kernel.SpecialForms}.require/1` extension.
+
+  Extensions may want to import functions/macros into the module.
+  """
+  @callback require!() :: Macro.t()
+
+  @doc """
   Optional callback to validate resulting AST
   """
   @callback validate_ast!(Context.t()) :: Context.t()
@@ -91,6 +98,7 @@ defmodule Apix.Schema.Extension do
 
   @optional_callbacks [
     install!: 1,
+    require!: 0,
     validate_ast!: 1,
     expression!: 5,
     normalize_ast!: 2,
@@ -112,6 +120,20 @@ defmodule Apix.Schema.Extension do
     if function_exported?(m, :install!, 1),
       do: m.install!(context),
       else: context
+  end
+
+  @doc """
+  Invokes `c:require!/0`
+  """
+  @spec require!(t()) :: Macro.t()
+  def require!(%__MODULE__{module: m}) do
+    if function_exported?(m, :require!, 0) do
+      m.require!()
+    else
+      quote do
+        require unquote(m)
+      end
+    end
   end
 
   @doc """
@@ -142,16 +164,6 @@ defmodule Apix.Schema.Extension do
     if function_exported?(m, :normalize_ast!, 2),
       do: m.normalize_ast!(context, ast),
       else: ast
-  end
-
-  @doc """
-  Builds `#{inspect Kernel.SpecialForms}.require/2` into `t:#{inspect Macro}.t/0`
-  """
-  @spec require(t()) :: Macro.t()
-  def require(%__MODULE__{module: m}) do
-    quote do
-      require unquote(m)
-    end
   end
 
   @doc """

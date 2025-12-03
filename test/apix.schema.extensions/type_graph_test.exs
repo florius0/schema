@@ -576,18 +576,20 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
 
       Apix.Schema.Case.clean()
 
-      defmodule TestSchema22 do
-        use Apix.Schema
+      capture_io :stderr, fn ->
+        defmodule TestSchema22 do
+          use Apix.Schema
 
-        schema a: a() or Any.t()
+          schema a: a() or Any.t()
 
-        schema b: Map.t() do
-          field :b, b() or Any.t()
-        end
+          schema b: Map.t() do
+            field :b, b() or Any.t()
+          end
 
-        schema c: Map.t() do
-          field :c, Map.t() do
-            field :c, c() or Any.t()
+          schema c: Map.t() do
+            field :c, Map.t() do
+              field :c, c() or Any.t()
+            end
           end
         end
       end
@@ -618,6 +620,7 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
           defmodule TestSchema24 do
             use Apix.Schema
 
+            # credo:disable-for-next-line
             schema a: Any.t() or Any.t()
           end
         end

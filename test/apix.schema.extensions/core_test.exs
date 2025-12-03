@@ -1,6 +1,8 @@
 defmodule Apix.Schema.Extensions.CoreTest do
   use Apix.Schema.Case
 
+  import ExUnit.CaptureIO
+
   alias Apix.Schema.Ast
   alias Apix.Schema.Extensions.Core
 
@@ -257,11 +259,13 @@ defmodule Apix.Schema.Extensions.CoreTest do
     end
 
     test "expressions | `a and b` – builds `and` schema expression – the value is expected to be valid against `a` and `b` schema expressions" do
-      defmodule TestSchema9 do
-        use Apix.Schema
+      capture_io :stderr, fn ->
+        defmodule TestSchema9 do
+          use Apix.Schema
 
-        # credo:disable-for-next-line
-        schema a: Any.t() and Any.t()
+          # credo:disable-for-next-line
+          schema a: Any.t() and Any.t()
+        end
       end
 
       assert %{
@@ -307,13 +311,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  errors: [],
                  flags: []
                }
-             } = TestSchema9.__apix_schemas__()
+             } = Apix.Schema.Extensions.CoreTest.TestSchema9.__apix_schemas__()
 
-      defmodule TestSchema10 do
-        use Apix.Schema
+      capture_io :stderr, fn ->
+        defmodule TestSchema10 do
+          use Apix.Schema
 
-        # credo:disable-for-next-line
-        schema a: Any.t() and Any.t() and Any.t()
+          # credo:disable-for-next-line
+          schema a: Any.t() and Any.t() and Any.t()
+        end
       end
 
       assert %{
@@ -382,15 +388,17 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  errors: [],
                  flags: []
                }
-             } = TestSchema10.__apix_schemas__()
+             } = Apix.Schema.Extensions.CoreTest.TestSchema10.__apix_schemas__()
     end
 
     test "expressions | `a or b` – builds `or` schema expression – the value is expected to be valid against `a` or `b` schema expressions" do
-      defmodule TestSchema11 do
-        use Apix.Schema
+      capture_io :stderr, fn ->
+        defmodule TestSchema11 do
+          use Apix.Schema
 
-        # credo:disable-for-next-line
-        schema a: Any.t() or Any.t()
+          # credo:disable-for-next-line
+          schema a: Any.t() or Any.t()
+        end
       end
 
       assert %{
@@ -436,13 +444,15 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  errors: [],
                  flags: []
                }
-             } = TestSchema11.__apix_schemas__()
+             } = Apix.Schema.Extensions.CoreTest.TestSchema11.__apix_schemas__()
 
-      defmodule TestSchema12 do
-        use Apix.Schema
+      capture_io :stderr, fn ->
+        defmodule TestSchema12 do
+          use Apix.Schema
 
-        # credo:disable-for-next-line
-        schema a: Any.t() or Any.t() or Any.t()
+          # credo:disable-for-next-line
+          schema a: Any.t() or Any.t() or Any.t()
+        end
       end
 
       assert %{
@@ -511,7 +521,7 @@ defmodule Apix.Schema.Extensions.CoreTest do
                  errors: [],
                  flags: []
                }
-             } = TestSchema12.__apix_schemas__()
+             } = Apix.Schema.Extensions.CoreTest.TestSchema12.__apix_schemas__()
     end
 
     test "expressions | `not a` – builds `not` schema expression – the value is expected to be invalid against `a` schema expression" do

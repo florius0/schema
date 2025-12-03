@@ -18,7 +18,8 @@ defmodule Apix.Schema.Warning do
           :message => String.t(),
           optional(:ast) => Ast.t() | nil,
           optional(:context) => Context.t() | nil,
-          optional(:meta) => Meta.t() | nil
+          optional(:meta) => Meta.t() | nil,
+          optional(any()) => any()
         }
 
   @doc """

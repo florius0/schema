@@ -26,7 +26,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Warnings.ReducibleAstWarning do
 
   defexception [:message, :ast, :reduced_ast, :meta]
 
-  @impl true
+  @impl Exception
   def exception(ast: ast, reduced_ast: reduced_ast) when (is_struct(ast, Ast) or is_struct(ast, Context)) and (is_struct(reduced_ast, Ast) or is_struct(reduced_ast, Context)) do
     ast =
       case ast do

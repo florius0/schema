@@ -13,7 +13,7 @@ defmodule Apix.Schema.Errors.InvalidElixirAstError do
 
   defexception [:message, :elixir_ast]
 
-  @impl true
+  @impl Exception
   def exception(elixir_ast: elixir_ast, env: env) do
     %__MODULE__{
       message: """

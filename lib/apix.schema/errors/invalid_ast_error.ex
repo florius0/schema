@@ -23,7 +23,7 @@ defmodule Apix.Schema.Errors.InvalidAstError do
 
   defexception [:message, :ast]
 
-  @impl true
+  @impl Exception
   def exception(%Ast{} = ast) do
     %__MODULE__{
       message: """

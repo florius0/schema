@@ -65,14 +65,23 @@ defmodule Apix.Schema do
       env = Map.put(__ENV__, :binding, binding())
       context = Context.get_or_default(env.module)
 
-      [{schema_name, type_ast} | params] = params
-
+      case params do
+        [{schema_name, type_ast} | params] ->
       params = Keyword.merge(block, params)
       flags = Keyword.drop(params, [:params, :do])
 
-      context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], flags, params[:do], __ENV__)
+          context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], flags, params[:do], env)
 
           env.module && Module.put_attribute(env.module, :apix_schemas, context)
+
+          context
+
+        type_elixir_ast ->
+          params = block
+          flags = Keyword.drop(params, [:params, :do])
+
+          Context.inner_expression!(context, type_elixir_ast, %Ast{}, env)
+      end
     end
   end
 

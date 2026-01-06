@@ -176,6 +176,7 @@ defmodule Apix.Schema.Context do
       end)
       |> case do
         %Ast{} = schema_ast -> {schema_ast, schema_ast}
+        %__MODULE__{} = context -> {context, context}
         _ -> {elixir_ast, schema_ast}
       end
     end

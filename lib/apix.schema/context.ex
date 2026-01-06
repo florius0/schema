@@ -205,6 +205,8 @@ defmodule Apix.Schema.Context do
     )
     |> map_ast(&expression!(&1, elixir_type_ast, env))
     |> map_ast(&expression!(&1, elixir_do_block_ast, env))
+
+    # |> map_ast(&struct(&1.ast, &1.ast.validators))
   end
 
   @doc """
@@ -355,12 +357,12 @@ defmodule Apix.Schema.Context do
   def build_delegates(%__MODULE__{} = context) do
     %{
       delegates:
-    context.extensions
-    |> Enum.flat_map(fn extension ->
-      Enum.map(extension.delegates, fn {from, to} ->
-        {from, {to, extension}}
-      end)
-    end)
+        context.extensions
+        |> Enum.flat_map(fn extension ->
+          Enum.map(extension.delegates, fn {from, to} ->
+            {from, {to, extension}}
+          end)
+        end)
         |> Map.new(),
       function_delegates:
         context.extensions
@@ -369,7 +371,7 @@ defmodule Apix.Schema.Context do
             {from, {to, extension}}
           end)
         end)
-    |> Map.new()
+        |> Map.new()
     }
   end
 
@@ -395,6 +397,23 @@ defmodule Apix.Schema.Context do
   end
 
   def rewrite_delegates(maybe_ast, _delegates), do: maybe_ast
+
+  @doc """
+  Binds arguments to parameters.
+  """
+  @spec bind_args(t(), [Ast.t()]) :: t()
+  def bind_args(context, args) do
+    required = Enum.count(context.params, &match?({_name, _arity, nil}, &1))
+
+    struct(context, params: do_bind_args(context.params, args, required))
+  end
+
+  defp do_bind_args([], [], _required), do: []
+  defp do_bind_args([], _args, _required), do: raise(ArgumentError, "too many arguments")
+  defp do_bind_args([{name, _arity, nil} | _params], [], _required), do: raise(ArgumentError, "missing required argument #{inspect(name)}")
+  defp do_bind_args([{name, arity, nil} | params], [a | args], required), do: [{name, arity, a} | do_bind_args(params, args, required - 1)]
+  defp do_bind_args([{name, arity, default} | params], args, required) when default != nil and length(args) == required, do: [{name, arity, default} | do_bind_args(params, args, required)]
+  defp do_bind_args([{name, arity, _default} | params], [a | args], required), do: [{name, arity, a} | do_bind_args(params, args, required)]
 
   @doc """
   Context functor on `:ast`.

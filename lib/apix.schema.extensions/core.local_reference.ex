@@ -30,12 +30,24 @@ defmodule Apix.Schema.Extensions.Core.LocalReference do
   def manifest, do: @manifest
 
   @impl Extension
-  def expression!(context, {schema, _, elixir_ast}, schema_ast, env, false) when schema != :__block__ do
-    struct(schema_ast,
-      module: env.module,
-      schema: schema,
-      args: Enum.map(elixir_ast, &Context.expression!(context, &1, schema_ast, env))
-    )
+  def expression!(context, {schema, _, args} = elixir_ast, schema_ast, env, false) when is_atom(schema) and schema != :__block__ do
+    args =
+      if is_list(args),
+        do: args,
+        else: []
+
+    arity = length(args)
+
+    if {schema, arity} in Enum.flat_map(env.functions ++ env.macros, &elem(&1, 1)) do
+      {result, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
+      result
+    else
+      struct(schema_ast,
+        module: env.module,
+        schema: schema,
+        args: Enum.map(args, &Context.expression!(context, &1, schema_ast, env))
+      )
+    end
   end
 
   def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false

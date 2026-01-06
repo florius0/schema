@@ -91,15 +91,15 @@ defmodule Apix.Schema.Extensions.Core do
   @doc """
   Returns true if `it` is valid against given schema.
   """
-  defmacro valid?(_it, _schema) do
-    false
+  def valid?(_it, _schema) do
+    !!Application.get_env(:apix_schema, false)
   end
 
   @doc """
   Returns :ok if `it` is valid against given schema.
   """
-  defmacro validate(_it, _schema) do
-    false
+  def validate(_it, _schema) do
+    !!Application.get_env(:apix_schema, false)
   end
 
   @impl Extension
@@ -108,7 +108,6 @@ defmodule Apix.Schema.Extensions.Core do
   @impl Extension
   def require! do
     quote generated: true do
-      require unquote(__MODULE__)
       import unquote(__MODULE__), only: [valid?: 2, validate: 2]
     end
   end
@@ -305,29 +304,91 @@ defmodule Apix.Schema.Extensions.Core do
   end
 
   def expression!(_context, elixir_ast, schema_ast, env, true) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
+    elixir_ast
+    |> Code.eval_quoted(env.binding, env)
+    |> elem(0)
+    |> case do
+      %Ast{} = ast ->
+        ast
 
+      %Context{} = context ->
+        context
+
+      arg ->
     struct(schema_ast,
       module: Const,
       schema: :t,
       args: [arg]
     )
   end
+  end
 
-  def expression!(context, {{:., _, [module, schema]}, _, args}, schema_ast, env, false) do
+  def expression!(_context, {:/, _, [{{:., _, [module, schema]}, [{:no_parens, true} | _], []}, arity]}, _schema_ast, env, false) do
+    {module, _binding} = Code.eval_quoted(module, env.binding, env)
+    {{module, schema}, _extension} = Map.get(env.delegates, {module, schema}, {{module, schema}, nil})
+
+    Code.ensure_compiled!(module)
+    Apix.Schema.get_schema(module, schema, arity)
+  end
+
+  def expression!(context, {{:., _, [module, schema]}, _, args} = elixir_ast, schema_ast, env, false) do
+    {module, _binding} = Code.eval_quoted(module, env.binding, env)
+    arity = length(args)
+
+    cond do
+      is_atom(module) and Code.ensure_loaded?(module) and function_exported?(module, schema, arity) ->
+        elixir_ast
+        |> Code.eval_quoted(env.binding, env)
+        |> elem(0)
+
+      is_atom(module) ->
     struct(schema_ast,
-      module: Macro.expand(module, env),
+          module: module,
       schema: schema,
       args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
     )
+
+      true ->
+        elixir_ast
+        |> Code.eval_quoted(env.binding, env)
+        |> elem(0)
+    end
   end
 
   def expression!(_context, {:_, _, _}, schema_ast, _env, _literal?) do
     schema_ast
   end
 
-  def expression!(context, {name, _, args}, schema_ast, env, false) do
-    args = args || []
+  def expression!(context, {name, meta, elixir_context}, schema_ast, env, false) when is_atom(name) and is_atom(elixir_context) do
+    args = []
+    arity = 0
+
+    if name in Keyword.keys(env.binding) do
+      {name, meta, nil}
+      |> Code.eval_quoted(env.binding, env)
+      |> elem(0)
+    else
+      Enum.find_value(context.params, fn
+        {^name, ^arity, _} ->
+          struct(schema_ast,
+            module: nil,
+            schema: name,
+            args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env)),
+            parameter?: true
+          )
+
+        _ ->
+          false
+      end)
+    end
+  end
+
+  def expression!(context, {name, _, args}, schema_ast, env, false) when is_atom(name) and is_list(args) do
+    args =
+      if is_list(args),
+        do: args,
+        else: []
+
     arity = length(args)
 
     Enum.find_value(context.params, fn

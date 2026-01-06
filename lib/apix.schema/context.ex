@@ -72,6 +72,36 @@ defmodule Apix.Schema.Context do
             flags: [],
             extensions: []
 
+  def default(extensions \\ nil) do
+    extensions =
+      if is_list(extensions),
+        do: extensions,
+        else: Extension.config()
+
+    %__MODULE__{}
+    |> add_extensions(extensions)
+    |> install!()
+  end
+
+  def get(module) do
+    Module.get_attribute(module, :apix_schema_context)
+  rescue
+    _ in [ArgumentError, FunctionClauseError] ->
+      Module.__info__(:attributes)[:apix_schema_context]
+  end
+
+  def get_or_default(module_or_extensions \\ nil), do: get(module_or_extensions) || default(module_or_extensions)
+
+  def put(%__MODULE__{} = context, module) do
+    Module.register_attribute(module, :apix_schema_context, persist: true)
+    Module.put_attribute(module, :apix_schema_context, context)
+
+    context
+  rescue
+    ArgumentError ->
+      context
+  end
+
   @doc """
   Adds an extension to the context.
 

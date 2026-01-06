@@ -1,7 +1,6 @@
 defmodule Apix.Schema do
   alias Apix.Schema.Ast
   alias Apix.Schema.Context
-  alias Apix.Schema.Extension
 
   @moduledoc "readme.md"
              |> File.read!()
@@ -28,28 +27,30 @@ defmodule Apix.Schema do
   Sets default context and imports `schema/2` macro
   """
   defmacro __using__(opts) do
-    extensions =
+    context =
       opts[:extensions]
       |> Code.eval_quoted([], __CALLER__)
       |> elem(0)
+      |> Context.get_or_default()
+      |> Context.put(__CALLER__.module)
 
-    extensions = extensions || Extension.config()
-
-    context =
-      %Context{}
-      |> Context.add_extensions(extensions)
-      |> Context.install!()
-
-    Module.put_attribute(__CALLER__.module, :apix_schema_context, context)
+    if __CALLER__.module do
     Module.register_attribute(__CALLER__.module, :apix_schemas, accumulate: true)
 
     quote do
-      import Apix.Schema, only: [schema: 1, schema: 2]
+        import Apix.Schema, only: [schema: 1, schema: 2]
 
       unquote(Context.require!(context))
 
       @before_compile unquote(__MODULE__)
       @after_compile unquote(__MODULE__)
+      end
+    else
+      quote do
+        import Apix.Schema
+
+        unquote(Context.require!(context))
+      end
     end
   end
 
@@ -61,7 +62,8 @@ defmodule Apix.Schema do
             params: Macro.escape(params),
             block: Macro.escape(block)
           ] do
-      context = Module.get_attribute(__ENV__.module, :apix_schema_context)
+      env = Map.put(__ENV__, :binding, binding())
+      context = Context.get_or_default(env.module)
 
       [{schema_name, type_ast} | params] = params
 
@@ -70,7 +72,7 @@ defmodule Apix.Schema do
 
       context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], flags, params[:do], __ENV__)
 
-      Module.put_attribute(__ENV__.module, :apix_schemas, context)
+          env.module && Module.put_attribute(env.module, :apix_schemas, context)
     end
   end
 

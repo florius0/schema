@@ -35,15 +35,15 @@ defmodule Apix.Schema do
       |> Context.put(__CALLER__.module)
 
     if __CALLER__.module do
-    Module.register_attribute(__CALLER__.module, :apix_schemas, accumulate: true)
+      Module.register_attribute(__CALLER__.module, :apix_schemas, accumulate: true)
 
-    quote do
+      quote do
         import Apix.Schema, only: [schema: 1, schema: 2]
 
-      unquote(Context.require!(context))
+        unquote(Context.require!(context))
 
-      @before_compile unquote(__MODULE__)
-      @after_compile unquote(__MODULE__)
+        @before_compile unquote(__MODULE__)
+        @after_compile unquote(__MODULE__)
       end
     else
       quote do
@@ -54,7 +54,6 @@ defmodule Apix.Schema do
     end
   end
 
-  @spec schema(any()) :: {:__block__, [], [{:=, [], [...]} | {:__block__, [...], [...]}, ...]}
   defmacro schema(params, block \\ [do: {:__block__, [], []}]) do
     quote location: :keep,
           generated: true,
@@ -67,8 +66,8 @@ defmodule Apix.Schema do
 
       case params do
         [{schema_name, type_ast} | params] ->
-      params = Keyword.merge(block, params)
-      flags = Keyword.drop(params, [:params, :do])
+          params = Keyword.merge(block, params)
+          flags = Keyword.drop(params, [:params, :do])
 
           context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], flags, params[:do], env)
 

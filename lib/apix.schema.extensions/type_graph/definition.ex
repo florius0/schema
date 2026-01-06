@@ -10,7 +10,6 @@ defmodule Apix.Schema.Extensions.TypeGraph.Definition do
 
   Drops the graph argument, since the graph is held by `#{inspect Graph}`
   """
-  @spec define() :: Macro.t()
   defmacro define do
     do_define(:digraph, __CALLER__) ++ do_define(:digraph_utils, __CALLER__)
   end

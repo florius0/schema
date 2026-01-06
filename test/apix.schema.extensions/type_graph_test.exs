@@ -1,6 +1,8 @@
 defmodule Apix.Schema.Extensions.TypeGraphTest do
   use Apix.Schema.Case
 
+  require Apix.Schema.Extensions.TypeGraph
+
   import ExUnit.CaptureIO
 
   alias Apix.Schema.Extensions.TypeGraph
@@ -546,7 +548,7 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
         end
 
       assert %FullyRecursiveAstError{
-               ast: %Ast{module: Apix.Schema.Extensions.Elixir.Map, schema: :t, args: [_]},
+               ast: %Ast{module: Apix.Schema.Extensions.TypeGraphTest.TestSchema20, schema: :a, args: []},
                meta: %Meta{}
              } = exception
 

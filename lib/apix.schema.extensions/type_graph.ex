@@ -101,8 +101,26 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - Known and unknown types are not subtypes.
   - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
   """
-  @spec subtype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
-  def subtype?(subtype, supertype) do
+  defmacro subtype?(subtype, supertype) do
+    quote do
+      env = Map.put(__ENV__, :binding, binding())
+      context = Context.get_or_default(env)
+      subtype = Context.inner_expression!(context, [unquote(Macro.escape(subtype))], %Ast{}, env)
+      supertype = Context.inner_expression!(context, [unquote(Macro.escape(supertype))], %Ast{}, env)
+
+      unquote(__MODULE__).check_subtype?(subtype, supertype)
+    end
+  end
+
+  @doc """
+  Returns `true` if `subtype` is a subtype of `supertype`.
+
+  - Structurally equal types are subtypes.
+  - Known and unknown types are not subtypes.
+  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
+  """
+  @spec check_subtype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
+  def check_subtype?(subtype, supertype) do
     subtype = to_vertex(subtype)
     supertype = to_vertex(supertype)
 
@@ -116,8 +134,26 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - Known and unknown types are not supertypes.
   - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
   """
-  @spec supertype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
-  def supertype?(supertype, subtype) do
+  defmacro supertype?(subtype, supertype) do
+    quote do
+      env = Map.put(__ENV__, :binding, binding())
+      context = Context.get_or_default(env)
+      subtype = Context.inner_expression!(context, [unquote(Macro.escape(subtype))], %Ast{}, env)
+      supertype = Context.inner_expression!(context, [unquote(Macro.escape(supertype))], %Ast{}, env)
+
+      unquote(__MODULE__).check_supertype?(subtype, supertype)
+    end
+  end
+
+  @doc """
+  Returns `true` if `supertype` is a subtype of `subtype`.
+
+  - Structurally equal types are supertypes.
+  - Known and unknown types are not supertypes.
+  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
+  """
+  @spec check_supertype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
+  def check_supertype?(supertype, subtype) do
     supertype = to_vertex(supertype)
     subtype = to_vertex(subtype)
 
@@ -129,8 +165,24 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   Note that this function knows nothing about the semantics of the graph, it just finds a path matching the `predicate`.
   """
-  @spec path_exists?(Context.t() | Ast.t(), Context.t() | Ast.t(), (relation() -> as_boolean(any()))) :: boolean()
-  def path_exists?(from, to, predicate) do
+  defmacro path_exists?(from, to, predicate) do
+    quote do
+      env = Map.put(__ENV__, :binding, binding())
+      context = Context.get_or_default(env)
+      from = Context.inner_expression!(context, [unquote(Macro.escape(from))], %Ast{}, env)
+      to = Context.inner_expression!(context, [unquote(Macro.escape(to))], %Ast{}, env)
+
+      unquote(__MODULE__).check_path_exists?(from, to, unquote(predicate))
+    end
+  end
+
+  @doc """
+  Returns `true` if path matching the `predicate` exists between `from` and `to` vertices in the graph.
+
+  Note that this function knows nothing about the semantics of the graph, it just finds a path matching the `predicate`.
+  """
+  @spec check_path_exists?(Context.t() | Ast.t(), Context.t() | Ast.t(), (relation() -> as_boolean(any()))) :: boolean()
+  def check_path_exists?(from, to, predicate) do
     from = to_vertex(from)
     to = to_vertex(to)
 
@@ -393,18 +445,16 @@ defmodule Apix.Schema.Extensions.TypeGraph do
       |> Enum.all?(fn hash ->
         {^hash, context_or_ast} = Graph.vertex(hash)
 
-        strategy =
-          Apix.Schema.get_schema(context_or_ast).flags[:recursion]
-          |> get_in()
-          |> Kernel.||(:all)
-
         referenced =
           hash
           |> Graph.out_edges()
           |> Enum.filter(&match?({_from, _to, :references}, &1))
           |> Enum.map(&elem(&1, 1))
 
-        case strategy do
+        Apix.Schema.get_schema(context_or_ast).flags[:recursion]
+        |> get_in()
+        |> Kernel.||(:all)
+        |> case do
           :all ->
             referenced -- component == []
 
@@ -539,6 +589,13 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @impl Extension
   def manifest, do: @manifest
+
+  @impl Extension
+  def require! do
+    quote do
+      import unquote(__MODULE__), only: [path_exists?: 3, subtype?: 2, supertype?: 2]
+    end
+  end
 
   @impl Extension
   def expression!(_context, {:relate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do

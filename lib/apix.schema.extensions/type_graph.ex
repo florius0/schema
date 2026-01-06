@@ -545,7 +545,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     quote do
       def __apix_schema_relate__(unquote(arg1), unquote(arg2)) when unquote(guard), do: unquote(block)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, relates: Enum.uniq([{env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
   end
@@ -554,13 +554,13 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     quote do
       def __apix_schema_relate__(unquote(arg1), unquote(arg2)), do: unquote(block)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, relates: Enum.uniq([{env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
   end
 
   def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, [], env)
+    {module, _binding} = Code.eval_quoted(module, env.binding, env)
 
     struct(schema_ast, relates: [{module, function, []} | schema_ast.relates])
   end
@@ -570,7 +570,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   end
 
   def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, env, _literal?) do
-    {mfa, _binding} = Code.eval_quoted(mfa, [], env)
+    {mfa, _binding} = Code.eval_quoted(mfa, env.binding, env)
 
     struct(schema_ast, relates: [mfa | schema_ast.relates])
   end
@@ -579,7 +579,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     quote do
       def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)) when unquote(guard), do: unquote(block)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, relationships: Enum.uniq([{env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
   end
@@ -588,13 +588,13 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     quote do
       def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)), do: unquote(block)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, relationships: Enum.uniq([{env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
   end
 
   def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 3]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, [], env)
+    {module, _binding} = Code.eval_quoted(module, env.binding, env)
 
     struct(schema_ast, relationships: [{module, function, []} | schema_ast.relationships])
   end
@@ -604,7 +604,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   end
 
   def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, env, _literal?) do
-    {mfa, _binding} = Code.eval_quoted(mfa, [], env)
+    {mfa, _binding} = Code.eval_quoted(mfa, env.binding, env)
 
     struct(schema_ast, relationships: [mfa | schema_ast.relationships])
   end

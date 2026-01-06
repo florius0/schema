@@ -275,7 +275,7 @@ defmodule Apix.Schema.Context do
   end
 
   def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, flags_elixir_ast], schema_ast, env) do
-    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, [], env)
+    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, env.binding, env)
 
     schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
     schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
@@ -284,7 +284,7 @@ defmodule Apix.Schema.Context do
   end
 
   def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, flags_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
-    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, [], env)
+    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, env.binding, env)
 
     schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
     schema_ast = expression!(context, type_elixir_ast, schema_ast, env)

@@ -113,46 +113,46 @@ defmodule Apix.Schema.Extensions.Core do
 
   @impl Extension
   def expression!(_context, {:shortdoc, _, [elixir_ast]}, schema_ast, env, _literal?) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, [], env)
+    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
 
     struct(schema_ast, shortdoc: arg)
   end
 
   def expression!(_context, {:doc, _, [elixir_ast]}, schema_ast, env, _literal?) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, [], env)
+    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
 
     struct(schema_ast, doc: arg)
   end
 
   def expression!(_context, {:example, _, [elixir_ast]}, schema_ast, env, _literal?) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, [], env)
+    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
 
     struct(schema_ast, examples: [arg | schema_ast.examples])
   end
 
   # TODO: Validators
   def expression!(_context, {:validate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 1]}]}]} = elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, [], env)
+    {module, _binding} = Code.eval_quoted(module, env.binding, env)
 
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = _context), do: unquote(module).unquote(function)(it)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
 
   def expression!(_context, {:validate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, [], env)
+    {module, _binding} = Code.eval_quoted(module, env.binding, env)
 
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context), do: unquote(module).unquote(function)(it, context)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -163,7 +163,7 @@ defmodule Apix.Schema.Extensions.Core do
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = _context), do: unquote(function)(it)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -174,20 +174,20 @@ defmodule Apix.Schema.Extensions.Core do
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context), do: unquote(function)(it, context)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
 
   def expression!(_context, {:validate, _, [{:{}, _, [m, _f, _a]} = mfa]} = elixir_ast, schema_ast, env, _literal?) when m != :error do
-    {{module, function, args}, _binding} = Code.eval_quoted(mfa, [], env)
+    {{module, function, args}, _binding} = Code.eval_quoted(mfa, env.binding, env)
 
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context), do: unquote(module).unquote(function)(it, context, unquote_splicing(args))
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -200,7 +200,7 @@ defmodule Apix.Schema.Extensions.Core do
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: var!(it)} = var!(context)), do: unquote(block)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -213,7 +213,7 @@ defmodule Apix.Schema.Extensions.Core do
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: var!(it)} = var!(context)), do: unquote(block)
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -227,7 +227,7 @@ defmodule Apix.Schema.Extensions.Core do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1)} = var!(context)) when unquote(guard), do: unquote(block)
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -241,7 +241,7 @@ defmodule Apix.Schema.Extensions.Core do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1)} = var!(context)), do: unquote(block)
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -255,7 +255,7 @@ defmodule Apix.Schema.Extensions.Core do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1)} = unquote(arg2) = var!(context)) when unquote(guard), do: unquote(block)
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -269,7 +269,7 @@ defmodule Apix.Schema.Extensions.Core do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1)} = unquote(arg2) = var!(context)), do: unquote(block)
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted([], env)
+    |> Code.eval_quoted(env.binding, env)
 
     struct(schema_ast, validators: [{env.module, name, []}])
   end
@@ -303,7 +303,7 @@ defmodule Apix.Schema.Extensions.Core do
   end
 
   def expression!(_context, elixir_ast, schema_ast, env, true) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, [], env)
+    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
 
     struct(schema_ast,
       module: Const,

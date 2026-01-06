@@ -12,7 +12,7 @@ defmodule Apix.Schema.ExtensionTest do
       def manifest, do: %Extension{module: __MODULE__, delegates: []}
 
       def install!(%Context{} = context), do: struct(context, flags: [:installed])
-      def require!, do: :required
+      def require!, do: :required!
       def validate_ast!(%Context{} = context), do: struct(context, flags: [:validated])
       def expression!(_context, _elixir_ast, %Ast{} = ast, _env, _literal?), do: struct(ast, flags: [:expressed])
       def normalize_ast!(_context, %Ast{} = ast), do: struct(ast, flags: [:normalized])

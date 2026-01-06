@@ -16,7 +16,7 @@ defmodule Apix.SchemaTest do
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Elixir},
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core.LocalReference}
                  ]
-               } = Module.get_attribute(__MODULE__, :apix_schema_context)
+               } = Context.get(__MODULE__)
       end
 
       defmodule TestSchema2 do
@@ -31,7 +31,7 @@ defmodule Apix.SchemaTest do
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core},
                    %Apix.Schema.Extension{module: Apix.Schema.Extensions.Core.LocalReference}
                  ]
-               } = Module.get_attribute(__MODULE__, :apix_schema_context)
+               } = Context.get(__MODULE__)
       end
     end
 

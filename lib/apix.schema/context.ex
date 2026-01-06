@@ -165,13 +165,14 @@ defmodule Apix.Schema.Context do
   def expression!(%__MODULE__{} = context, elixir_ast, schema_ast \\ nil, env) do
     schema_ast = schema_ast || context.ast
     delegates = build_delegates(context)
+    env = Map.merge(env, delegates)
 
     prewalker = fn elixir_ast, schema_ast ->
       context.extensions
       |> Enum.find_value(fn extension ->
         extension
         |> Extension.expression!(context, elixir_ast, schema_ast, env, Macro.quoted_literal?(elixir_ast))
-        |> rewrite_delegates(delegates)
+        |> rewrite_delegates(env)
         |> Meta.maybe_put_in(env: env, elixir_ast: elixir_ast, generated_by: extension)
       end)
       |> case do
@@ -347,23 +348,40 @@ defmodule Apix.Schema.Context do
   @doc """
   Builds map of delegates for efficient rewriting in `rewrite_delegates/2`.
   """
-  @spec build_delegates(t()) :: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}
+  @spec build_delegates(t()) :: %{
+          delegates: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}},
+          function_delegates: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}
+        }
   def build_delegates(%__MODULE__{} = context) do
+    %{
+      delegates:
     context.extensions
     |> Enum.flat_map(fn extension ->
       Enum.map(extension.delegates, fn {from, to} ->
         {from, {to, extension}}
       end)
     end)
+        |> Map.new(),
+      function_delegates:
+        context.extensions
+        |> Enum.flat_map(fn extension ->
+          Enum.map(extension.function_delegates, fn {from, to} ->
+            {from, {to, extension}}
+          end)
+        end)
     |> Map.new()
+    }
   end
 
   @doc """
   Rewrites delegates in the AST node
   """
-  @spec rewrite_delegates(maybe_ast, %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}) :: maybe_ast when maybe_ast: Ast.t() | any()
+  @spec rewrite_delegates(maybe_ast, %{
+          delegates: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}
+        }) :: maybe_ast
+        when maybe_ast: Ast.t() | any()
   def rewrite_delegates(%Ast{} = ast, delegates) do
-    delegates
+    delegates.delegates
     |> Map.get({ast.module, ast.schema})
     |> case do
       {{module, schema}, extension} ->

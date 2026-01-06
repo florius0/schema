@@ -16,6 +16,12 @@ defmodule Apix.Schema.ContextTest do
               {Apix.Schema.Extensions.Core.Const, :t},
               {Apix.Schema.Extensions.Core.Any, :t}
             }
+          ],
+          function_delegates: [
+            {
+              {Apix.Schema.Extensions.Core.Const, :value},
+              {Apix.Schema.Extensions.Core.Any, :value}
+            }
           ]
         }
       end
@@ -32,9 +38,17 @@ defmodule Apix.Schema.ContextTest do
       context = %Context{extensions: [DelegateExtension.manifest()]}
 
       assert %{
-               {Apix.Schema.Extensions.Core.Const, :t} => {
-                 {Apix.Schema.Extensions.Core.Any, :t},
-                 extension = %Apix.Schema.Extension{module: DelegateExtension}
+               delegates: %{
+                 {Apix.Schema.Extensions.Core.Const, :t} => {
+                   {Apix.Schema.Extensions.Core.Any, :t},
+                   extension = %Apix.Schema.Extension{module: DelegateExtension}
+                 }
+               },
+               function_delegates: %{
+                 {Apix.Schema.Extensions.Core.Const, :value} => {
+                   {Apix.Schema.Extensions.Core.Any, :value},
+                   extension = %Apix.Schema.Extension{module: DelegateExtension}
+                 }
                }
              } = delegates = Context.build_delegates(context)
 

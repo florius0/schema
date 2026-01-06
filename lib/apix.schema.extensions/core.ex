@@ -50,7 +50,9 @@ defmodule Apix.Schema.Extensions.Core do
       {
         {Elixir.Const, :t},
         {Const, :t}
-      },
+      }
+    ],
+    function_delegates: [
       {
         {Elixir.Const, :value},
         {Const, :value}

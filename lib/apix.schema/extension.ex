@@ -25,10 +25,12 @@ defmodule Apix.Schema.Extension do
 
   - `:module` – module in which extension is defined.
   - `:delegates` – list of delegates extension is providing.
+  - `:function_delegates` – list of function delegates extension is providing.
   """
   @type t() :: %__MODULE__{
           module: module(),
-          delegates: [delegate()]
+          delegates: [delegate()],
+          function_delegates: [delegate()]
         }
 
   @typedoc """
@@ -55,7 +57,8 @@ defmodule Apix.Schema.Extension do
   @type delegate_target() :: {module(), atom()}
 
   defstruct module: nil,
-            delegates: []
+            delegates: [],
+            function_delegates: []
 
   @doc """
   Callback to return extension's manifest

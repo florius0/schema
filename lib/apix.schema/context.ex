@@ -87,7 +87,7 @@ defmodule Apix.Schema.Context do
     Module.get_attribute(module, :apix_schema_context)
   rescue
     _ in [ArgumentError, FunctionClauseError] ->
-      Module.__info__(:attributes)[:apix_schema_context]
+      module && is_atom(module) && Code.ensure_loaded?(module) && module.module_info(:attributes)[:apix_schema_context]
   end
 
   def get_or_default(module_or_extensions \\ nil), do: get(module_or_extensions) || default(module_or_extensions)

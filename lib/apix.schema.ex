@@ -67,9 +67,20 @@ defmodule Apix.Schema do
       case params do
         [{schema_name, type_ast} | params] ->
           params = Keyword.merge(block, params)
-          flags = Keyword.drop(params, [:params, :do])
 
-          context = Context.schema_definition_expression!(context, schema_name, type_ast, params[:params], flags, params[:do], env)
+          schema_params =
+            params
+            |> Enum.filter(&match?({:params, _elixir_ast}, &1))
+            |> Enum.flat_map(&elem(&1, 1))
+
+          validators =
+            params
+            |> Enum.filter(&match?({:when, _elixir_ast}, &1))
+            |> Enum.map(&elem(&1, 1))
+
+          flags = Keyword.drop(params, [:params, :when, :do])
+
+          context = Context.schema_definition_expression!(context, schema_name, type_ast, schema_params, validators, flags, params[:do], env)
 
           env.module && Module.put_attribute(env.module, :apix_schemas, context)
 

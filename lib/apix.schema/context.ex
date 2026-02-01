@@ -418,7 +418,7 @@ defmodule Apix.Schema.Context do
   @doc """
   Context functor on `:ast`.
   """
-  @spec map_ast(atom() | struct(), (any() -> any())) :: struct()
+  @spec map_ast(t(), (any() -> any())) :: struct()
   def map_ast(%__MODULE__{} = context, fun), do: struct(context, ast: fun.(context))
 
   @doc """

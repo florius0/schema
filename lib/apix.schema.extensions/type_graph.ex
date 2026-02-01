@@ -99,7 +99,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   - Structurally equal types are subtypes.
   - Known and unknown types are not subtypes.
-  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
+  - `t:#{inspect Ast}.t/0` and `t:#{inspect Context}.t/0` referencing same schema are subtypes.
   """
   defmacro subtype?(subtype, supertype) do
     quote do
@@ -117,7 +117,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   - Structurally equal types are subtypes.
   - Known and unknown types are not subtypes.
-  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are subtypes.
+  - `t:#{inspect Ast}.t/0` and `t:#{inspect Context}.t/0` referencing same schema are subtypes.
   """
   @spec check_subtype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
   def check_subtype?(subtype, supertype) do
@@ -132,7 +132,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   - Structurally equal types are supertypes.
   - Known and unknown types are not supertypes.
-  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
+  - `t:#{inspect Ast}.t/0` and `t:#{inspect Context}.t/0` referencing same schema are supertypes.
   """
   defmacro supertype?(subtype, supertype) do
     quote do
@@ -150,7 +150,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   - Structurally equal types are supertypes.
   - Known and unknown types are not supertypes.
-  - `t:Ast.t/0` and `t:Context.t/0` referencing same schema are supertypes.
+  - `t:#{inspect Ast}.t/0` and `t:#{inspect Context}.t/0` referencing same schema are supertypes.
   """
   @spec check_supertype?(Context.t() | Ast.t(), Context.t() | Ast.t()) :: boolean()
   def check_supertype?(supertype, subtype) do
@@ -289,7 +289,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @doc group: "Internal"
   @doc """
-  Converts `t:Context.t/0` or `t:Ast.t/0` to `:digraph.vertex()`.
+  Converts `t:#{inspect Context}.t/0` or `t:#{inspect Ast}.t/0` to `:digraph.vertex()`.
   """
   @spec to_vertex(Context.t() | Ast.t()) :: :digraph.vertex()
   def to_vertex(context_or_ast) when is_struct(context_or_ast, Context) or is_struct(context_or_ast, Ast) do
@@ -523,7 +523,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @doc group: "Internal"
   @doc """
-  Builds the sub/super-type relates in the graph for given `t:Context.t/0` or `t:Ast.t/0`.
+  Builds the sub/super-type relates in the graph for given `t:#{inspect Context}.t/0` or `t:#{inspect Ast}.t/0`.
   """
   def build_type_relates!(context_or_ast) do
     context_or_ast
@@ -558,7 +558,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @doc group: "Internal"
   @doc """
-  Builds the sub/super-type relationships in the graph for given `t:Context.t/0` or `t:Ast.t/0`.
+  Builds the sub/super-type relationships in the graph for given `t:#{inspect Context}.t/0` or `t:#{inspect Ast}.t/0`.
   """
   def build_type_relationships!(context_or_ast, peers, existing) do
     new = Enum.reduce(peers, existing, &relationship(context_or_ast, &1, &2))

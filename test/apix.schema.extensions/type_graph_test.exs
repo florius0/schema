@@ -364,7 +364,7 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
                |> TypeGraph.relationship(:peer, [:existing])
     end
 
-    test "subtype?/2" do
+    test "check_subtype?/2" do
       defmodule TestSchema15 do
         use Apix.Schema
 
@@ -386,43 +386,43 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
       y = Apix.Schema.get_schema(TestSchema15, :y, 0)
       z = Apix.Schema.get_schema(TestSchema15, :z, 0)
 
-      assert TypeGraph.subtype?(a, a)
-      assert TypeGraph.subtype?(b, b)
-      assert TypeGraph.subtype?(c, c)
-      assert TypeGraph.subtype?(d, d)
-      assert TypeGraph.subtype?(x, x)
-      assert TypeGraph.subtype?(y, y)
+      assert TypeGraph.check_subtype?(a, a)
+      assert TypeGraph.check_subtype?(b, b)
+      assert TypeGraph.check_subtype?(c, c)
+      assert TypeGraph.check_subtype?(d, d)
+      assert TypeGraph.check_subtype?(x, x)
+      assert TypeGraph.check_subtype?(y, y)
 
-      assert TypeGraph.subtype?(a.ast, a)
-      assert TypeGraph.subtype?(b.ast, b)
-      assert TypeGraph.subtype?(c.ast, c)
-      assert TypeGraph.subtype?(d.ast, d)
-      assert TypeGraph.subtype?(x.ast, x)
-      assert TypeGraph.subtype?(y.ast, y)
+      assert TypeGraph.check_subtype?(a.ast, a)
+      assert TypeGraph.check_subtype?(b.ast, b)
+      assert TypeGraph.check_subtype?(c.ast, c)
+      assert TypeGraph.check_subtype?(d.ast, d)
+      assert TypeGraph.check_subtype?(x.ast, x)
+      assert TypeGraph.check_subtype?(y.ast, y)
 
-      assert TypeGraph.subtype?(a.ast, a.ast)
-      assert TypeGraph.subtype?(b.ast, b.ast)
-      assert TypeGraph.subtype?(c.ast, c.ast)
-      assert TypeGraph.subtype?(d.ast, d.ast)
-      assert TypeGraph.subtype?(x.ast, x.ast)
-      assert TypeGraph.subtype?(y.ast, y.ast)
+      assert TypeGraph.check_subtype?(a.ast, a.ast)
+      assert TypeGraph.check_subtype?(b.ast, b.ast)
+      assert TypeGraph.check_subtype?(c.ast, c.ast)
+      assert TypeGraph.check_subtype?(d.ast, d.ast)
+      assert TypeGraph.check_subtype?(x.ast, x.ast)
+      assert TypeGraph.check_subtype?(y.ast, y.ast)
 
-      assert TypeGraph.subtype?(a, x.ast)
-      assert TypeGraph.subtype?(b, x.ast)
-      assert TypeGraph.subtype?(c, x.ast)
+      assert TypeGraph.check_subtype?(a, x.ast)
+      assert TypeGraph.check_subtype?(b, x.ast)
+      assert TypeGraph.check_subtype?(c, x.ast)
 
-      assert TypeGraph.subtype?(%Ast{module: TestSchema15, schema: :a, args: []}, x.ast)
-      assert TypeGraph.subtype?(%Ast{module: TestSchema15, schema: :b, args: []}, x.ast)
-      assert TypeGraph.subtype?(%Ast{module: TestSchema15, schema: :c, args: []}, x.ast)
+      assert TypeGraph.check_subtype?(%Ast{module: TestSchema15, schema: :a, args: []}, x.ast)
+      assert TypeGraph.check_subtype?(%Ast{module: TestSchema15, schema: :b, args: []}, x.ast)
+      assert TypeGraph.check_subtype?(%Ast{module: TestSchema15, schema: :c, args: []}, x.ast)
 
-      assert TypeGraph.subtype?(y.ast, %Ast{module: TestSchema15, schema: :a, args: []})
-      assert TypeGraph.subtype?(y.ast, %Ast{module: TestSchema15, schema: :b, args: []})
-      assert TypeGraph.subtype?(y.ast, %Ast{module: TestSchema15, schema: :c, args: []})
+      assert TypeGraph.check_subtype?(y.ast, %Ast{module: TestSchema15, schema: :a, args: []})
+      assert TypeGraph.check_subtype?(y.ast, %Ast{module: TestSchema15, schema: :b, args: []})
+      assert TypeGraph.check_subtype?(y.ast, %Ast{module: TestSchema15, schema: :c, args: []})
 
-      refute TypeGraph.subtype?(d, z)
+      refute TypeGraph.check_subtype?(d, z)
     end
 
-    test "supertype?/2" do
+    test "check_supertype?/2" do
       defmodule TestSchema16 do
         use Apix.Schema
 
@@ -444,40 +444,40 @@ defmodule Apix.Schema.Extensions.TypeGraphTest do
       y = Apix.Schema.get_schema(TestSchema16, :y, 0)
       z = Apix.Schema.get_schema(TestSchema16, :z, 0)
 
-      assert TypeGraph.supertype?(a, a)
-      assert TypeGraph.supertype?(b, b)
-      assert TypeGraph.supertype?(c, c)
-      assert TypeGraph.supertype?(d, d)
-      assert TypeGraph.supertype?(x, x)
-      assert TypeGraph.supertype?(y, y)
+      assert TypeGraph.check_supertype?(a, a)
+      assert TypeGraph.check_supertype?(b, b)
+      assert TypeGraph.check_supertype?(c, c)
+      assert TypeGraph.check_supertype?(d, d)
+      assert TypeGraph.check_supertype?(x, x)
+      assert TypeGraph.check_supertype?(y, y)
 
-      assert TypeGraph.supertype?(a.ast, a)
-      assert TypeGraph.supertype?(b.ast, b)
-      assert TypeGraph.supertype?(c.ast, c)
-      assert TypeGraph.supertype?(d.ast, d)
-      assert TypeGraph.supertype?(x.ast, x)
-      assert TypeGraph.supertype?(y.ast, y)
+      assert TypeGraph.check_supertype?(a.ast, a)
+      assert TypeGraph.check_supertype?(b.ast, b)
+      assert TypeGraph.check_supertype?(c.ast, c)
+      assert TypeGraph.check_supertype?(d.ast, d)
+      assert TypeGraph.check_supertype?(x.ast, x)
+      assert TypeGraph.check_supertype?(y.ast, y)
 
-      assert TypeGraph.supertype?(a.ast, a.ast)
-      assert TypeGraph.supertype?(b.ast, b.ast)
-      assert TypeGraph.supertype?(c.ast, c.ast)
-      assert TypeGraph.supertype?(d.ast, d.ast)
-      assert TypeGraph.supertype?(x.ast, x.ast)
-      assert TypeGraph.supertype?(y.ast, y.ast)
+      assert TypeGraph.check_supertype?(a.ast, a.ast)
+      assert TypeGraph.check_supertype?(b.ast, b.ast)
+      assert TypeGraph.check_supertype?(c.ast, c.ast)
+      assert TypeGraph.check_supertype?(d.ast, d.ast)
+      assert TypeGraph.check_supertype?(x.ast, x.ast)
+      assert TypeGraph.check_supertype?(y.ast, y.ast)
 
-      assert TypeGraph.supertype?(a, x.ast)
-      assert TypeGraph.supertype?(b, x.ast)
-      assert TypeGraph.supertype?(c, x.ast)
+      assert TypeGraph.check_supertype?(a, x.ast)
+      assert TypeGraph.check_supertype?(b, x.ast)
+      assert TypeGraph.check_supertype?(c, x.ast)
 
-      assert TypeGraph.supertype?(%Ast{module: TestSchema16, schema: :a, args: []}, x.ast)
-      assert TypeGraph.supertype?(%Ast{module: TestSchema16, schema: :b, args: []}, x.ast)
-      assert TypeGraph.supertype?(%Ast{module: TestSchema16, schema: :c, args: []}, x.ast)
+      assert TypeGraph.check_supertype?(%Ast{module: TestSchema16, schema: :a, args: []}, x.ast)
+      assert TypeGraph.check_supertype?(%Ast{module: TestSchema16, schema: :b, args: []}, x.ast)
+      assert TypeGraph.check_supertype?(%Ast{module: TestSchema16, schema: :c, args: []}, x.ast)
 
-      assert TypeGraph.supertype?(y.ast, %Ast{module: TestSchema16, schema: :a, args: []})
-      assert TypeGraph.supertype?(y.ast, %Ast{module: TestSchema16, schema: :b, args: []})
-      assert TypeGraph.supertype?(y.ast, %Ast{module: TestSchema16, schema: :c, args: []})
+      assert TypeGraph.check_supertype?(y.ast, %Ast{module: TestSchema16, schema: :a, args: []})
+      assert TypeGraph.check_supertype?(y.ast, %Ast{module: TestSchema16, schema: :b, args: []})
+      assert TypeGraph.check_supertype?(y.ast, %Ast{module: TestSchema16, schema: :c, args: []})
 
-      refute TypeGraph.supertype?(d, z)
+      refute TypeGraph.check_supertype?(d, z)
     end
 
     test "path_exists?/3" do

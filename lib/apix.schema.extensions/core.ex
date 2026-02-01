@@ -84,6 +84,22 @@ defmodule Apix.Schema.Extensions.Core do
   >
   > Due to technical limitations, local (defied in same module) schema referencing is a separate extension `#{inspect Apix.Schema.Extensions.Core.LocalReference}`.
   > `#{inspect Apix.Schema.Extensions.Core.LocalReference}` should be installed as last extension to prevent all other expressions to be recognized as local references
+
+  ## Validators
+
+  There are several ways to define validators:
+
+  1. Inline validator – when defining schema using `#{inspect Apix.Schema}.schema/2`, e.g.:
+
+      ```elixir
+      defmodule MySchema do
+        use Apix.Schema
+
+        schema a(): Any.t(), when: it != nil
+      end
+      ```
+
+      In this case, `it != nil` is the validator expression. If it evaluates to truthy value, the validator will pass. Otherwise, it will fail.
   """
 
   @behaviour Extension
@@ -91,15 +107,97 @@ defmodule Apix.Schema.Extensions.Core do
   @doc """
   Returns true if `it` is valid against given schema.
   """
-  def valid?(_it, _schema) do
-    !!Application.get_env(:apix_schema, false)
+  defmacro valid?(_it, _schema) do
+    quote do
+      !!Application.get_env(:apix_schema, false)
+      # TODO: compilation bug?
+      # env = Map.put(__ENV__, :binding, binding())
+      # context = Context.get_or_default(env)
+      # schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
+
+      # unquote(__MODULE__).check_valid?(unquote(it), schema)
+    end
+  end
+
+  @doc """
+  Returns true if `it` is valid against given schema.
+  """
+  @spec check_valid?(any(), Context.t() | Ast.t()) :: boolean()
+  def check_valid?(it, schema) do
+    :ok == validate_context(it, schema)
   end
 
   @doc """
   Returns :ok if `it` is valid against given schema.
   """
-  def validate(_it, _schema) do
-    !!Application.get_env(:apix_schema, false)
+  defmacro validate(_it, _schema) do
+    quote do
+      !!Application.get_env(:apix_schema, false)
+      # TODO: compilation bug?
+      # env = Map.put(__ENV__, :binding, binding())
+      # context = Context.get_or_default(env)
+      # schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
+
+      # unquote(__MODULE__).check_validate(unquote(it), schema)
+    end
+  end
+
+  @doc """
+  Wraps `it` in `t:#{inspect Context}t/0` and validates it
+  """
+  @spec validate_context(any(), Context.t() | Ast.t()) :: {:ok, Context.t()} | {:error, Context.t()}
+  def validate_context(it, context_or_ast) do
+    context =
+      context_or_ast
+      |> case do
+        %Ast{} = ast ->
+          Apix.Schema.get_schema(ast)
+
+        %Context{} = context ->
+          context
+      end
+      |> struct(data: it)
+
+    context_or_ast
+    |> case do
+      %Ast{} = ast ->
+        ast.validators
+
+      %Context{} = context ->
+        context.ast.validators
+    end
+    |> Enum.reduce({:ok, context}, fn
+      validator, {:ok, context} ->
+        invoke_validator(context, validator)
+
+      validator, {:error, context} ->
+        {_status, context} = invoke_validator(context, validator)
+        {:error, context}
+    end)
+  end
+
+  defp invoke_validator(context, {m, f, a} = _validator) do
+    case apply(m, f, [context | a]) do
+      error when error in [nil, false, :error] ->
+        error = {context.path, "is invalid"}
+        {:error, struct(context, errors: [error | context.errors])}
+
+      {:error, %Context{} = context} ->
+        {:error, context}
+
+      {:error, message} ->
+        error = {context.path, message}
+        {:error, struct(context, errors: [error | context.errors])}
+
+      ok when ok in [true, :ok] ->
+        {:ok, context}
+
+      {:ok, %Context{} = context} ->
+        {:ok, context}
+
+      {:ok, data} ->
+        {:ok, struct(context, data: data)}
+    end
   end
 
   @impl Extension
@@ -359,11 +457,11 @@ defmodule Apix.Schema.Extensions.Core do
         |> Const.maybe_wrap(schema_ast)
 
       is_atom(module) ->
-    struct(schema_ast,
+        struct(schema_ast,
           module: module,
-      schema: schema,
-      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
-    )
+          schema: schema,
+          args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
+        )
 
       true ->
         elixir_ast
@@ -431,7 +529,7 @@ defmodule Apix.Schema.Extensions.Core do
         {{name, arity}, default}
       end)
 
-        Macro.prewalk(elixir_ast, fn
+    Macro.prewalk(elixir_ast, fn
       {name, _meta, args} when (is_nil(args) and is_map_key(params, {name, 0})) or is_map_key(params, {name, length(args)}) ->
         args = List.wrap(args)
         arity = length(args)
@@ -441,18 +539,18 @@ defmodule Apix.Schema.Extensions.Core do
         args = Enum.map(args, &Context.inner_expression!(context, &1, %Ast{}, env))
 
         quote location: :keep, generated: true do
-context.params[unquote(name)]
+          context.params[unquote(name)]
           |> Kernel.||(unquote(default))
           |> struct(args: unquote(args))
         end
 
       {{:., _meta1, [{name, _meta, _args} = module, schema]}, _meta3, args} = elixir_ast when name not in [:it, :context] ->
         {module, _binding} = Code.eval_quoted(module, env.binding, env)
-arity = length(args)
+        arity = length(args)
 
         cond do
           delegate = Map.get(env.delegates, {module, schema}) ->
-        {{module, schema}, _extension} = delegate
+            {{module, schema}, _extension} = delegate
 
             quote location: :keep, generated: true do
               context = Apix.Schema.get_schema(unquote(module), unquote(schema), unquote(arity))

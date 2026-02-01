@@ -36,7 +36,8 @@ defmodule Apix.Schema.Context do
           warnings: [Warning.t()],
           errors: [Error.t()],
           flags: keyword(),
-          extensions: [Extension.t()]
+          extensions: [Extension.t()],
+          path: [any()]
         }
 
   @typedoc """
@@ -70,7 +71,8 @@ defmodule Apix.Schema.Context do
             warnings: [],
             errors: [],
             flags: [],
-            extensions: []
+            extensions: [],
+            path: []
 
   def default(extensions \\ nil) do
     extensions =
@@ -192,8 +194,8 @@ defmodule Apix.Schema.Context do
 
   See `expression!/4`.
   """
-  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), keyword(), Macro.t(), Macro.Env.t()) :: t()
-  def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, flags, elixir_do_block_ast, env) do
+  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), keyword(), Macro.t(), Macro.Env.t()) :: t()
+  def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, validators, flags, elixir_do_block_ast, env) do
     env = Code.env_for_eval(env)
 
     context

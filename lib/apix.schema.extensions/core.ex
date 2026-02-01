@@ -179,14 +179,14 @@ defmodule Apix.Schema.Extensions.Core do
   defp invoke_validator(context, {m, f, a} = _validator) do
     case apply(m, f, [context | a]) do
       error when error in [nil, false, :error] ->
-        error = {context.path, "is invalid"}
+        error = {"is invalid", context.path}
         {:error, struct(context, errors: [error | context.errors])}
 
       {:error, %Context{} = context} ->
         {:error, context}
 
       {:error, message} ->
-        error = {context.path, message}
+        error = {message, context.path}
         {:error, struct(context, errors: [error | context.errors])}
 
       ok when ok in [true, :ok] ->

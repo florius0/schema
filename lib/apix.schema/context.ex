@@ -34,7 +34,7 @@ defmodule Apix.Schema.Context do
           schema: Schema.schema(),
           params: params(),
           warnings: [Warning.t()],
-          errors: [Error.t()],
+          errors: [{message :: any(), path :: [any()]} | Error.t()],
           flags: keyword(),
           extensions: [Extension.t()],
           path: [any()]

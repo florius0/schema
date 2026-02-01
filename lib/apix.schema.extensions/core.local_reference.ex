@@ -1,9 +1,10 @@
 defmodule Apix.Schema.Extensions.Core.LocalReference do
   alias Apix.Schema
 
+  alias Apix.Schema.Context
   alias Apix.Schema.Extension
 
-  alias Apix.Schema.Context
+  alias Apix.Schema.Extensions.Core.Const
 
   @manifest %Extension{
     module: __MODULE__
@@ -39,8 +40,10 @@ defmodule Apix.Schema.Extensions.Core.LocalReference do
     arity = length(args)
 
     if {schema, arity} in Enum.flat_map(env.functions ++ env.macros, &elem(&1, 1)) do
-      {result, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
-      result
+      elixir_ast
+      |> Code.eval_quoted(env.binding, env)
+      |> elem(0)
+      |> Const.maybe_wrap(schema_ast)
     else
       struct(schema_ast,
         module: env.module,

@@ -205,8 +205,9 @@ defmodule Apix.Schema.Context do
     )
     |> map_ast(&expression!(&1, elixir_type_ast, env))
     |> map_ast(&expression!(&1, elixir_do_block_ast, env))
-
-    # |> map_ast(&struct(&1.ast, &1.ast.validators))
+    |> map_ast(fn context ->
+      Enum.reduce(validators, context.ast, &expression!(context, {:validate, [], [&1]}, &2, env))
+    end)
   end
 
   @doc """

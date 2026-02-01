@@ -307,20 +307,7 @@ defmodule Apix.Schema.Extensions.Core do
     elixir_ast
     |> Code.eval_quoted(env.binding, env)
     |> elem(0)
-    |> case do
-      %Ast{} = ast ->
-        ast
-
-      %Context{} = context ->
-        context
-
-      arg ->
-    struct(schema_ast,
-      module: Const,
-      schema: :t,
-      args: [arg]
-    )
-  end
+    |> Const.maybe_wrap(schema_ast)
   end
 
   def expression!(_context, {:/, _, [{{:., _, [module, schema]}, [{:no_parens, true} | _], []}, arity]}, _schema_ast, env, false) do
@@ -333,6 +320,7 @@ defmodule Apix.Schema.Extensions.Core do
 
   def expression!(context, {{:., _, [module, schema]}, _, args} = elixir_ast, schema_ast, env, false) do
     {module, _binding} = Code.eval_quoted(module, env.binding, env)
+    {{module, schema}, _extension} = Map.get(env.delegates, {module, schema}, {{module, schema}, nil})
     arity = length(args)
 
     cond do
@@ -340,6 +328,7 @@ defmodule Apix.Schema.Extensions.Core do
         elixir_ast
         |> Code.eval_quoted(env.binding, env)
         |> elem(0)
+        |> Const.maybe_wrap(schema_ast)
 
       is_atom(module) ->
     struct(schema_ast,
@@ -351,7 +340,7 @@ defmodule Apix.Schema.Extensions.Core do
       true ->
         elixir_ast
         |> Code.eval_quoted(env.binding, env)
-        |> elem(0)
+        |> Const.maybe_wrap(schema_ast)
     end
   end
 
@@ -367,6 +356,7 @@ defmodule Apix.Schema.Extensions.Core do
       {name, meta, nil}
       |> Code.eval_quoted(env.binding, env)
       |> elem(0)
+      |> Const.maybe_wrap()
     else
       Enum.find_value(context.params, fn
         {^name, ^arity, _} ->

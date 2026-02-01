@@ -107,15 +107,15 @@ defmodule Apix.Schema.Extensions.Core do
   @doc """
   Returns true if `it` is valid against given schema.
   """
-  defmacro valid?(_it, _schema) do
+  defmacro valid?(it, schema) do
     quote do
       !!Application.get_env(:apix_schema, false)
       # TODO: compilation bug?
-      # env = Map.put(__ENV__, :binding, binding())
-      # context = Context.get_or_default(env)
-      # schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
+      env = Map.put(__ENV__, :binding, binding())
+      context = Context.get_or_default(env)
+      schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
 
-      # unquote(__MODULE__).check_valid?(unquote(it), schema)
+      unquote(__MODULE__).check_valid?(unquote(it), schema)
     end
   end
 
@@ -130,15 +130,15 @@ defmodule Apix.Schema.Extensions.Core do
   @doc """
   Returns :ok if `it` is valid against given schema.
   """
-  defmacro validate(_it, _schema) do
+  defmacro validate(it, schema) do
     quote do
       !!Application.get_env(:apix_schema, false)
       # TODO: compilation bug?
-      # env = Map.put(__ENV__, :binding, binding())
-      # context = Context.get_or_default(env)
-      # schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
+      env = Map.put(__ENV__, :binding, binding())
+      context = Context.get_or_default(env)
+      schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
 
-      # unquote(__MODULE__).check_validate(unquote(it), schema)
+      unquote(__MODULE__).check_validate(unquote(it), schema)
     end
   end
 

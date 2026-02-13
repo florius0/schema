@@ -87,7 +87,7 @@ defmodule Apix.Schema.Extension do
   @doc """
   Optional callback to transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0`.
   """
-  @callback expression!(Context.t(), Macro.t(), Ast.t(), Macro.Env.t(), literal? :: boolean()) :: Ast.t() | false
+  @callback expression!(Context.t(), Macro.t(), Ast.t(), literal? :: boolean()) :: Ast.t() | false
 
   @doc """
   Optional callback to normalize `t:#{inspect Ast}.t/0`.
@@ -103,7 +103,7 @@ defmodule Apix.Schema.Extension do
     install!: 1,
     require!: 0,
     validate_ast!: 1,
-    expression!: 5,
+    expression!: 4,
     normalize_ast!: 2,
     cast: 1
   ]
@@ -152,10 +152,10 @@ defmodule Apix.Schema.Extension do
   @doc """
   Invokes `c:expression!/5`
   """
-  @spec expression!(t(), Context.t(), Macro.t(), Ast.t(), Macro.Env.t(), literal? :: boolean()) :: Ast.t() | false
-  def expression!(%__MODULE__{module: m}, context, elixir_ast, schema_ast, env, literal?) do
-    if function_exported?(m, :expression!, 5),
-      do: m.expression!(context, elixir_ast, schema_ast, env, literal?),
+  @spec expression!(t(), Context.t(), Macro.t(), Ast.t(), literal? :: boolean()) :: Ast.t() | false
+  def expression!(%__MODULE__{module: m}, context, elixir_ast, schema_ast, literal?) do
+    if function_exported?(m, :expression!, 4),
+      do: m.expression!(context, elixir_ast, schema_ast, literal?),
       else: false
   end
 

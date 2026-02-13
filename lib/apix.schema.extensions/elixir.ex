@@ -164,19 +164,19 @@ defmodule Apix.Schema.Extensions.Elixir do
   def manifest, do: @manifest
 
   @impl Extension
-  def expression!(context, {:item, _, elixir_ast}, schema_ast, env, _literal?) do
-    type = Context.inner_expression!(context, elixir_ast, %Ast{}, env)
+  def expression!(context, {:item, _, elixir_ast}, schema_ast, _literal?) do
+    type = Context.inner_expression!(context, elixir_ast, %Ast{})
 
     Ast.add_keyword_args(schema_ast, item: type)
   end
 
-  def expression!(context, {:rest, _, elixir_ast}, schema_ast, env, _literal?) do
-    type = Context.inner_expression!(context, elixir_ast, %Ast{}, env)
+  def expression!(context, {:rest, _, elixir_ast}, schema_ast, _literal?) do
+    type = Context.inner_expression!(context, elixir_ast, %Ast{})
 
     Ast.add_keyword_args(schema_ast, rest: type)
   end
 
-  def expression!(context, {:field, _, elixir_ast}, schema_ast, env, _literal?) do
+  def expression!(context, {:field, _, elixir_ast}, schema_ast, _literal?) do
     {key_type, value_type} =
       if match?([do: {:__block__, _, [{:key, _, _}, {:value, _, _} | _]}], Elixir.List.last(elixir_ast)) do
         {
@@ -185,9 +185,9 @@ defmodule Apix.Schema.Extensions.Elixir do
         } = Enum.split(elixir_ast, -1)
 
         {
-          Context.inner_expression!(context, key_elixir_ast, %Ast{}, env),
+          Context.inner_expression!(context, key_elixir_ast, %Ast{}),
           context
-          |> Context.inner_expression!(value_elixir_ast, %Ast{}, env)
+          |> Context.inner_expression!(value_elixir_ast, %Ast{})
           |> struct(flags: Elixir.List.flatten(flags))
         }
       else
@@ -197,13 +197,13 @@ defmodule Apix.Schema.Extensions.Elixir do
         ] = elixir_ast
 
         {
-          Context.inner_expression!(context, [key_elixir_ast], %Ast{}, env),
-          Context.inner_expression!(context, value_elixir_ast, %Ast{}, env)
+          Context.inner_expression!(context, [key_elixir_ast], %Ast{}),
+          Context.inner_expression!(context, value_elixir_ast, %Ast{})
         }
       end
 
     Ast.add_keyword_args(schema_ast, field: {key_type, value_type})
   end
 
-  def expression!(_context, _ast, _schema_ast, _env, _literal?), do: false
+  def expression!(_context, _ast, _schema_ast, _literal?), do: false
 end

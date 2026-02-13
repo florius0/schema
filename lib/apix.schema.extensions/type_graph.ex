@@ -103,10 +103,18 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   """
   defmacro subtype?(subtype, supertype) do
     quote do
-      env = Map.put(__ENV__, :binding, binding())
-      context = Context.get_or_default(env)
-      subtype = Context.inner_expression!(context, [unquote(Macro.escape(subtype))], %Ast{}, env)
-      supertype = Context.inner_expression!(context, [unquote(Macro.escape(supertype))], %Ast{}, env)
+      binding = binding()
+
+      context =
+        __ENV__.module
+        |> Context.get_or_default()
+        |> struct(
+          binding: binding(),
+          env: Code.env_for_eval(__ENV__)
+        )
+
+      subtype = Context.inner_expression!(context, [unquote(Macro.escape(subtype))], %Ast{})
+      supertype = Context.inner_expression!(context, [unquote(Macro.escape(supertype))], %Ast{})
 
       unquote(__MODULE__).check_subtype?(subtype, supertype)
     end
@@ -136,10 +144,18 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   """
   defmacro supertype?(subtype, supertype) do
     quote do
-      env = Map.put(__ENV__, :binding, binding())
-      context = Context.get_or_default(env)
-      subtype = Context.inner_expression!(context, [unquote(Macro.escape(subtype))], %Ast{}, env)
-      supertype = Context.inner_expression!(context, [unquote(Macro.escape(supertype))], %Ast{}, env)
+      binding = binding()
+
+      context =
+        __ENV__.module
+        |> Context.get_or_default()
+        |> struct(
+          binding: binding(),
+          env: Code.env_for_eval(__ENV__)
+        )
+
+      subtype = Context.inner_expression!(context, [unquote(Macro.escape(subtype))], %Ast{})
+      supertype = Context.inner_expression!(context, [unquote(Macro.escape(supertype))], %Ast{})
 
       unquote(__MODULE__).check_supertype?(subtype, supertype)
     end
@@ -167,10 +183,18 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   """
   defmacro path_exists?(from, to, predicate) do
     quote do
-      env = Map.put(__ENV__, :binding, binding())
-      context = Context.get_or_default(env)
-      from = Context.inner_expression!(context, [unquote(Macro.escape(from))], %Ast{}, env)
-      to = Context.inner_expression!(context, [unquote(Macro.escape(to))], %Ast{}, env)
+      binding = binding()
+
+      context =
+        __ENV__.module
+        |> Context.get_or_default()
+        |> struct(
+          binding: binding(),
+          env: Code.env_for_eval(__ENV__)
+        )
+
+      from = Context.inner_expression!(context, [unquote(Macro.escape(from))], %Ast{})
+      to = Context.inner_expression!(context, [unquote(Macro.escape(to))], %Ast{})
 
       unquote(__MODULE__).check_path_exists?(from, to, unquote(predicate))
     end
@@ -598,75 +622,75 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   end
 
   @impl Extension
-  def expression!(_context, {:relate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:relate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
     quote do
       def __apix_schema_relate__(unquote(arg1), unquote(arg2)) when unquote(guard), do: unquote(block)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, relates: Enum.uniq([{env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
+    struct(schema_ast, relates: Enum.uniq([{context.env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
   end
 
-  def expression!(_context, {:relate, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:relate, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
     quote do
       def __apix_schema_relate__(unquote(arg1), unquote(arg2)), do: unquote(block)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, relates: Enum.uniq([{env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
+    struct(schema_ast, relates: Enum.uniq([{context.env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
   end
 
-  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, env.binding, env)
+  def expression!(context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, _literal?) do
+    {module, _binding} = Context.eval_quoted(module, context)
 
     struct(schema_ast, relates: [{module, function, []} | schema_ast.relates])
   end
 
-  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{function, _, _}, 2]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    struct(schema_ast, relates: [{env.module, function, []} | schema_ast.relates])
+  def expression!(context, {:relate, _, [{:&, _, [{:/, _, [{function, _, _}, 2]}]}]} = _elixir_ast, schema_ast, _literal?) do
+    struct(schema_ast, relates: [{context.env.module, function, []} | schema_ast.relates])
   end
 
-  def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, env, _literal?) do
-    {mfa, _binding} = Code.eval_quoted(mfa, env.binding, env)
+  def expression!(context, {:relate, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, _literal?) do
+    {mfa, _binding} = Context.eval_quoted(mfa, context)
 
     struct(schema_ast, relates: [mfa | schema_ast.relates])
   end
 
-  def expression!(_context, {:relationship, _, [arg1, arg2, {:when, _, [arg3, guard]}, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:relationship, _, [arg1, arg2, {:when, _, [arg3, guard]}, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
     quote do
       def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)) when unquote(guard), do: unquote(block)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, relationships: Enum.uniq([{env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
+    struct(schema_ast, relationships: Enum.uniq([{context.env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
   end
 
-  def expression!(_context, {:relationship, _, [arg1, arg2, arg3, [do: block]]} = _elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:relationship, _, [arg1, arg2, arg3, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
     quote do
       def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)), do: unquote(block)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, relationships: Enum.uniq([{env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
+    struct(schema_ast, relationships: Enum.uniq([{context.env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
   end
 
-  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 3]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, env.binding, env)
+  def expression!(context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 3]}]}]} = _elixir_ast, schema_ast, _literal?) do
+    {module, _binding} = Context.eval_quoted(module, context)
 
     struct(schema_ast, relationships: [{module, function, []} | schema_ast.relationships])
   end
 
-  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{function, _, _}, 3]}]}]} = _elixir_ast, schema_ast, env, _literal?) do
-    struct(schema_ast, relationships: [{env.module, function, []} | schema_ast.relationships])
+  def expression!(context, {:relationship, _, [{:&, _, [{:/, _, [{function, _, _}, 3]}]}]} = _elixir_ast, schema_ast, _literal?) do
+    struct(schema_ast, relationships: [{context.env.module, function, []} | schema_ast.relationships])
   end
 
-  def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, env, _literal?) do
-    {mfa, _binding} = Code.eval_quoted(mfa, env.binding, env)
+  def expression!(context, {:relationship, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, _literal?) do
+    {mfa, _binding} = Context.eval_quoted(mfa, context)
 
     struct(schema_ast, relationships: [mfa | schema_ast.relationships])
   end
 
-  def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
+  def expression!(_context, _elixir_ast, _schema_ast, _literal?), do: false
 
   @impl Extension
   def validate_ast!(context) do

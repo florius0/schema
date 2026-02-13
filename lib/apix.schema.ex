@@ -61,8 +61,12 @@ defmodule Apix.Schema do
             params: Macro.escape(params),
             block: Macro.escape(block)
           ] do
-      env = Map.put(__ENV__, :binding, binding())
-      context = Context.get_or_default(env.module)
+      binding = binding()
+
+      context =
+        __ENV__.module
+        |> Context.get_or_default()
+        |> struct(binding: binding, env: Code.env_for_eval(__ENV__))
 
       case params do
         [{schema_name, type_ast} | params] ->
@@ -80,9 +84,9 @@ defmodule Apix.Schema do
 
           flags = Keyword.drop(params, [:params, :when, :do])
 
-          context = Context.schema_definition_expression!(context, schema_name, type_ast, schema_params, validators, flags, params[:do], env)
+          context = Context.schema_definition_expression!(context, schema_name, type_ast, schema_params, validators, flags, params[:do])
 
-          env.module && Module.put_attribute(env.module, :apix_schemas, context)
+          context.env.module && Module.put_attribute(context.env.module, :apix_schemas, context)
 
           context
 
@@ -90,7 +94,7 @@ defmodule Apix.Schema do
           params = block
           flags = Keyword.drop(params, [:params, :do])
 
-          Context.inner_expression!(context, type_elixir_ast, %Ast{}, env)
+          Context.inner_expression!(context, type_elixir_ast, %Ast{})
       end
     end
   end

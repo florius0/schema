@@ -34,10 +34,10 @@ defmodule Apix.Schema.ContextTest do
       assert ast == Context.normalize_ast!(context)
     end
 
-    test "build_delegates/1 and rewrite_delegates/2" do
+    test "install!/1 and rewrite_delegates/2" do
       context = %Context{extensions: [DelegateExtension.manifest()]}
 
-      assert %{
+      assert %Context{
                delegates: %{
                  {Apix.Schema.Extensions.Core.Const, :t} => {
                    {Apix.Schema.Extensions.Core.Any, :t},
@@ -50,7 +50,7 @@ defmodule Apix.Schema.ContextTest do
                    extension = %Apix.Schema.Extension{module: DelegateExtension}
                  }
                }
-             } = delegates = Context.build_delegates(context)
+             } = context = Context.install!(context)
 
       assert %Ast{
                module: Apix.Schema.Extensions.Core.Any,
@@ -61,7 +61,7 @@ defmodule Apix.Schema.ContextTest do
                }
              } =
                %Ast{module: Apix.Schema.Extensions.Core.Const, schema: :t, args: []}
-               |> Context.rewrite_delegates(delegates)
+               |> Context.rewrite_delegates(context)
     end
 
     test "map_ast/2" do

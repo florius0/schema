@@ -107,15 +107,21 @@ defmodule Apix.Schema.Extensions.Core do
   @doc """
   Returns true if `it` is valid against given schema.
   """
-  defmacro valid?(_it, _schema) do
+  defmacro valid?(it, schema) do
     quote do
-      !!Application.get_env(:apix_schema, false)
-      # TODO: compilation bug?
-      # env = Map.put(__ENV__, :binding, binding())
-      # context = Context.get_or_default(env)
-      # schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
+      binding = binding()
 
-      # unquote(__MODULE__).check_valid?(unquote(it), schema)
+      context =
+        __ENV__.module
+        |> Context.get_or_default()
+        |> struct(
+          binding: binding(),
+          env: Code.env_for_eval(__ENV__)
+        )
+
+      schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{})
+
+      unquote(__MODULE__).check_valid?(unquote(it), schema)
     end
   end
 
@@ -124,21 +130,33 @@ defmodule Apix.Schema.Extensions.Core do
   """
   @spec check_valid?(any(), Context.t() | Ast.t()) :: boolean()
   def check_valid?(it, schema) do
-    :ok == validate_context(it, schema)
+    case validate_context(it, schema) do
+      {:ok, _context} ->
+        true
+
+      _error ->
+        false
+    end
   end
 
   @doc """
   Returns :ok if `it` is valid against given schema.
   """
-  defmacro validate(_it, _schema) do
+  defmacro validate(it, schema) do
     quote do
-      !!Application.get_env(:apix_schema, false)
-      # TODO: compilation bug?
-      # env = Map.put(__ENV__, :binding, binding())
-      # context = Context.get_or_default(env)
-      # schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{}, env)
+      binding = binding()
 
-      # unquote(__MODULE__).check_validate(unquote(it), schema)
+      context =
+        __ENV__.module
+        |> Context.get_or_default()
+        |> struct(
+          binding: binding(),
+          env: Code.env_for_eval(__ENV__)
+        )
+
+      schema = Context.inner_expression!(context, [unquote(Macro.escape(schema))], %Ast{})
+
+      unquote(__MODULE__).validate_context(unquote(it), schema)
     end
   end
 
@@ -211,89 +229,88 @@ defmodule Apix.Schema.Extensions.Core do
   end
 
   @impl Extension
-  def expression!(_context, {:shortdoc, _, [elixir_ast]}, schema_ast, env, _literal?) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
+  def expression!(context, {:shortdoc, _, [elixir_ast]}, schema_ast, _literal?) do
+    {arg, _binding} = Context.eval_quoted(elixir_ast, context)
 
     struct(schema_ast, shortdoc: arg)
   end
 
-  def expression!(_context, {:doc, _, [elixir_ast]}, schema_ast, env, _literal?) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
+  def expression!(context, {:doc, _, [elixir_ast]}, schema_ast, _literal?) do
+    {arg, _binding} = Context.eval_quoted(elixir_ast, context)
 
     struct(schema_ast, doc: arg)
   end
 
-  def expression!(_context, {:example, _, [elixir_ast]}, schema_ast, env, _literal?) do
-    {arg, _binding} = Code.eval_quoted(elixir_ast, env.binding, env)
+  def expression!(context, {:example, _, [elixir_ast]}, schema_ast, _literal?) do
+    {arg, _binding} = Context.eval_quoted(elixir_ast, context)
 
     struct(schema_ast, examples: [arg | schema_ast.examples])
   end
 
-  # TODO: Validators
-  def expression!(_context, {:validate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 1]}]}]} = elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, env.binding, env)
+  def expression!(context, {:validate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 1]}]}]} = elixir_ast, schema_ast, _literal?) do
+    {module, _binding} = Context.eval_quoted(module, context)
 
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = _context), do: unquote(module).unquote(function)(it)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(_context, {:validate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = elixir_ast, schema_ast, env, _literal?) do
-    {module, _binding} = Code.eval_quoted(module, env.binding, env)
+  def expression!(context, {:validate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = elixir_ast, schema_ast, _literal?) do
+    {module, _binding} = Context.eval_quoted(module, context)
 
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context), do: unquote(module).unquote(function)(it, context)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(_context, {:validate, _, [{:&, _, [{:/, _, [{function, _, _}, 1]}]}]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [{:&, _, [{:/, _, [{function, _, _}, 1]}]}]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = _context), do: unquote(function)(it)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(_context, {:validate, _, [{:&, _, [{:/, _, [{function, _, _}, 2]}]}]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [{:&, _, [{:/, _, [{function, _, _}, 2]}]}]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context), do: unquote(function)(it, context)
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(_context, {:validate, _, [{:{}, _, [m, _f, _a]} = mfa]} = elixir_ast, schema_ast, env, _literal?) when m != :error do
-    {{module, function, args}, _binding} = Code.eval_quoted(mfa, env.binding, env)
+  def expression!(context, {:validate, _, [{:{}, _, [m, _f, _a]} = mfa]} = elixir_ast, schema_ast, _literal?) when m != :error do
+    {{module, function, args}, _binding} = Context.eval_quoted(mfa, context)
 
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context), do: unquote(module).unquote(function)(it, context, unquote_splicing(args))
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:validate, _, [[do: block]]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [[do: block]]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
-    block = rewrite_validator_do_block(context, block, env)
+    block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context) do
@@ -303,14 +320,14 @@ defmodule Apix.Schema.Extensions.Core do
         unquote(block)
       end
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:validate, _, [block]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [block]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
-    block = rewrite_validator_do_block(context, block, env)
+    block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context) do
@@ -320,14 +337,14 @@ defmodule Apix.Schema.Extensions.Core do
         unquote(block)
       end
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:validate, _, [{:when, _, [arg1, guard]}, [do: block]]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [{:when, _, [arg1, guard]}, [do: block]]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
-    block = rewrite_validator_do_block(context, block, env)
+    block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = context) when unquote(guard) do
@@ -339,14 +356,14 @@ defmodule Apix.Schema.Extensions.Core do
 
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:validate, _, [arg1, [do: block]]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [arg1, [do: block]]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
-    block = rewrite_validator_do_block(context, block, env)
+    block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = context) do
@@ -358,14 +375,14 @@ defmodule Apix.Schema.Extensions.Core do
 
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:validate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
-    block = rewrite_validator_do_block(context, block, env)
+    block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = unquote(arg2) = context) when unquote(guard) do
@@ -377,14 +394,14 @@ defmodule Apix.Schema.Extensions.Core do
 
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:validate, _, [arg1, arg2, [do: block]]} = elixir_ast, schema_ast, env, _literal?) do
+  def expression!(context, {:validate, _, [arg1, arg2, [do: block]]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
-    block = rewrite_validator_do_block(context, block, env)
+    block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = unquote(arg2) = context) do
@@ -396,63 +413,63 @@ defmodule Apix.Schema.Extensions.Core do
 
       def unquote(name)(%Apix.Schema.Context{} = _context), do: :error
     end
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
 
-    struct(schema_ast, validators: [{env.module, name, []} | schema_ast.validators])
+    struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
-  def expression!(context, {:and, _, args}, schema_ast, env, false) do
+  def expression!(context, {:and, _, args}, schema_ast, false) do
     struct(schema_ast,
       module: And,
       schema: :t,
-      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
+      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast))
     )
   end
 
-  def expression!(context, {:or, _, args}, schema_ast, env, false) do
+  def expression!(context, {:or, _, args}, schema_ast, false) do
     struct(schema_ast,
       module: Or,
       schema: :t,
-      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
+      args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast))
     )
   end
 
-  def expression!(context, {:not, _, args}, schema_ast, env, false) do
+  def expression!(context, {:not, _, args}, schema_ast, false) do
     struct(schema_ast,
       module: Not,
       schema: :t,
-      args: [Context.inner_expression!(context, args, schema_ast, env)]
+      args: [Context.inner_expression!(context, args, schema_ast)]
     )
   end
 
-  def expression!(context, {:@, _, _} = elixir_ast, schema_ast, env, false) do
-    expression!(context, elixir_ast, schema_ast, env, true)
+  def expression!(context, {:@, _, _} = elixir_ast, schema_ast, false) do
+    expression!(context, elixir_ast, schema_ast, true)
   end
 
-  def expression!(_context, elixir_ast, schema_ast, env, true) do
+  def expression!(context, elixir_ast, schema_ast, true) do
     elixir_ast
-    |> Code.eval_quoted(env.binding, env)
+    |> Context.eval_quoted(context)
     |> elem(0)
     |> Const.maybe_wrap(schema_ast)
   end
 
-  def expression!(_context, {:/, _, [{{:., _, [module, schema]}, [{:no_parens, true} | _], []}, arity]}, _schema_ast, env, false) do
-    {module, _binding} = Code.eval_quoted(module, env.binding, env)
-    {{module, schema}, _extension} = Map.get(env.delegates, {module, schema}, {{module, schema}, nil})
+  def expression!(context, {:/, _, [{{:., _, [module, schema]}, [{:no_parens, true} | _], []}, arity]}, _schema_ast, false) do
+    {module, _binding} = Context.eval_quoted(module, context)
+    {{module, schema}, _extension} = Map.get(context.delegates, {module, schema}, {{module, schema}, nil})
 
     Code.ensure_compiled!(module)
     Apix.Schema.get_schema(module, schema, arity)
   end
 
-  def expression!(context, {{:., _, [module, schema]}, _, args} = elixir_ast, schema_ast, env, false) do
-    {module, _binding} = Code.eval_quoted(module, env.binding, env)
-    {{module, schema}, _extension} = Map.get(env.delegates, {module, schema}, {{module, schema}, nil})
+  def expression!(context, {{:., _, [module, schema]}, _, args} = elixir_ast, schema_ast, false) do
+    {module, _binding} = Context.eval_quoted(module, context)
+    {{module, schema}, _extension} = Map.get(context.delegates, {module, schema}, {{module, schema}, nil})
     arity = length(args)
 
     cond do
       is_atom(module) and Code.ensure_loaded?(module) and function_exported?(module, schema, arity) ->
         elixir_ast
-        |> Code.eval_quoted(env.binding, env)
+        |> Context.eval_quoted(context)
         |> elem(0)
         |> Const.maybe_wrap(schema_ast)
 
@@ -460,27 +477,27 @@ defmodule Apix.Schema.Extensions.Core do
         struct(schema_ast,
           module: module,
           schema: schema,
-          args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env))
+          args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast))
         )
 
       true ->
         elixir_ast
-        |> Code.eval_quoted(env.binding, env)
+        |> Context.eval_quoted(context)
         |> Const.maybe_wrap(schema_ast)
     end
   end
 
-  def expression!(_context, {:_, _, _}, schema_ast, _env, _literal?) do
+  def expression!(_context, {:_, _, _}, schema_ast, _literal?) do
     schema_ast
   end
 
-  def expression!(context, {name, meta, elixir_context}, schema_ast, env, false) when is_atom(name) and is_atom(elixir_context) do
+  def expression!(context, {name, meta, elixir_context}, schema_ast, false) when is_atom(name) and is_atom(elixir_context) do
     args = []
     arity = 0
 
-    if name in Keyword.keys(env.binding) do
+    if name in Keyword.keys(context.binding) do
       {name, meta, nil}
-      |> Code.eval_quoted(env.binding, env)
+      |> Context.eval_quoted(context)
       |> elem(0)
       |> Const.maybe_wrap()
     else
@@ -489,7 +506,7 @@ defmodule Apix.Schema.Extensions.Core do
           struct(schema_ast,
             module: nil,
             schema: name,
-            args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env)),
+            args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast)),
             parameter?: true
           )
 
@@ -499,7 +516,7 @@ defmodule Apix.Schema.Extensions.Core do
     end
   end
 
-  def expression!(context, {name, _, args}, schema_ast, env, false) when is_atom(name) and is_list(args) do
+  def expression!(context, {name, _, args}, schema_ast, false) when is_atom(name) and is_list(args) do
     args =
       if is_list(args),
         do: args,
@@ -512,7 +529,7 @@ defmodule Apix.Schema.Extensions.Core do
         struct(schema_ast,
           module: nil,
           schema: name,
-          args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast, env)),
+          args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast)),
           parameter?: true
         )
 
@@ -521,9 +538,9 @@ defmodule Apix.Schema.Extensions.Core do
     end)
   end
 
-  def expression!(_context, _elixir_ast, _schema_ast, _env, _literal?), do: false
+  def expression!(_context, _elixir_ast, _schema_ast, _literal?), do: false
 
-  defp rewrite_validator_do_block(context, elixir_ast, env) do
+  defp rewrite_validator_do_block(context, elixir_ast) do
     params =
       Map.new(context.params, fn {name, arity, default} ->
         {{name, arity}, default}
@@ -536,32 +553,32 @@ defmodule Apix.Schema.Extensions.Core do
 
         default = Map.fetch!(params, {name, arity})
 
-        args = Enum.map(args, &Context.inner_expression!(context, &1, %Ast{}, env))
+        args = Enum.map(args, &Context.inner_expression!(context, &1, %Ast{}))
 
-        quote location: :keep, generated: true do
+        quote generated: true do
           context.params[unquote(name)]
           |> Kernel.||(unquote(default))
           |> struct(args: unquote(args))
         end
 
       {{:., _meta1, [{name, _meta, _args} = module, schema]}, _meta3, args} = elixir_ast when name not in [:it, :context] ->
-        {module, _binding} = Code.eval_quoted(module, env.binding, env)
+        {module, _binding} = Context.eval_quoted(module, context)
         arity = length(args)
 
         cond do
-          delegate = Map.get(env.delegates, {module, schema}) ->
+          delegate = Map.get(context.delegates, {module, schema}) ->
             {{module, schema}, _extension} = delegate
 
-            quote location: :keep, generated: true do
+            quote generated: true do
               context = Apix.Schema.get_schema(unquote(module), unquote(schema), unquote(arity))
-              args = Enum.map(args, &Context.inner_expression!(context, &1, %Ast{}, env))
+              args = Enum.map(args, &Context.inner_expression!(context, &1, %Ast{}))
               Context.bind_args(context, args)
             end
 
-          function_delegate = Map.get(env.function_delegates, {module, schema}) ->
+          function_delegate = Map.get(context.function_delegates, {module, schema}) ->
             {{module, function}, _extension} = function_delegate
 
-            quote location: :keep, generated: true do
+            quote generated: true do
               unquote(module).unquote(function)(unquote_splicing(args))
             end
 

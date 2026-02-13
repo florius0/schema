@@ -36,8 +36,7 @@ defmodule Apix.Schema.Context do
           warnings: [Warning.t()],
           errors: [{message :: any(), path :: [any()]} | Error.t()],
           flags: keyword(),
-          extensions: [Extension.t()],
-          path: [any()]
+          extensions: [Extension.t()]
         }
 
   @typedoc """
@@ -72,7 +71,11 @@ defmodule Apix.Schema.Context do
             errors: [],
             flags: [],
             extensions: [],
-            path: []
+            path: [],
+            delegates: %{},
+            function_delegates: %{},
+            binding: [],
+            env: nil
 
   def default(extensions \\ nil) do
     extensions =
@@ -131,7 +134,28 @@ defmodule Apix.Schema.Context do
   See `#{inspect Extension}.install!/2` and `c:#{inspect Extension}.install!/1`.
   """
   @spec install!(t()) :: t()
-  def install!(%__MODULE__{} = context), do: Enum.reduce(context.extensions, context, &Extension.install!/2)
+  def install!(%__MODULE__{} = context) do
+    context.extensions
+    |> Enum.reduce(context, &Extension.install!/2)
+    |> struct(
+      delegates:
+        context.extensions
+        |> Enum.flat_map(fn extension ->
+          Enum.map(extension.delegates, fn {from, to} ->
+            {from, {to, extension}}
+          end)
+        end)
+        |> Map.new(),
+      function_delegates:
+        context.extensions
+        |> Enum.flat_map(fn extension ->
+          Enum.map(extension.function_delegates, fn {from, to} ->
+            {from, {to, extension}}
+          end)
+        end)
+        |> Map.new()
+    )
+  end
 
   @doc """
   Requires all extensions in the context.
@@ -156,26 +180,24 @@ defmodule Apix.Schema.Context do
     context
   end
 
-  @dialyzer {:no_return, expression!: 4}
+  @dialyzer {:no_return, expression!: 3}
 
   @doc """
   Transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0` through all extensions.
 
   See `#{inspect Extension}.expression!/6` and `c:#{inspect Extension}.expression!/5`.
   """
-  @spec expression!(t(), Macro.t(), nil | Ast.t(), Macro.Env.t()) :: Ast.t()
-  def expression!(%__MODULE__{} = context, elixir_ast, schema_ast \\ nil, env) do
+  @spec expression!(t(), Macro.t(), nil | Ast.t()) :: Ast.t()
+  def expression!(%__MODULE__{} = context, elixir_ast, schema_ast \\ nil) do
     schema_ast = schema_ast || context.ast
-    delegates = build_delegates(context)
-    env = Map.merge(env, delegates)
 
     prewalker = fn elixir_ast, schema_ast ->
       context.extensions
       |> Enum.find_value(fn extension ->
         extension
-        |> Extension.expression!(context, elixir_ast, schema_ast, env, Macro.quoted_literal?(elixir_ast))
-        |> rewrite_delegates(env)
-        |> Meta.maybe_put_in(env: env, elixir_ast: elixir_ast, generated_by: extension)
+        |> Extension.expression!(context, elixir_ast, schema_ast, Macro.quoted_literal?(elixir_ast))
+        |> rewrite_delegates(context)
+        |> Meta.maybe_put_in(env: context.env, elixir_ast: elixir_ast, generated_by: extension)
       end)
       |> case do
         %Ast{} = schema_ast -> {schema_ast, schema_ast}
@@ -194,21 +216,19 @@ defmodule Apix.Schema.Context do
 
   See `expression!/4`.
   """
-  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), keyword(), Macro.t(), Macro.Env.t()) :: t()
-  def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, validators, flags, elixir_do_block_ast, env) do
-    env = Code.env_for_eval(env)
-
+  @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), keyword(), Macro.t()) :: t()
+  def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, validators, flags, elixir_do_block_ast) do
     context
     |> struct(
-      module: env.module,
+      module: context.env.module,
       schema: schema_name,
-      params: normalize_params!(context, params, env),
+      params: normalize_params!(context, params),
       flags: flags
     )
-    |> map_ast(&expression!(&1, elixir_type_ast, env))
-    |> map_ast(&expression!(&1, elixir_do_block_ast, env))
+    |> map_ast(&expression!(&1, elixir_type_ast))
+    |> map_ast(&expression!(&1, elixir_do_block_ast))
     |> map_ast(fn context ->
-      Enum.reduce(validators, context.ast, &expression!(context, {:validate, [], [&1]}, &2, env))
+      Enum.reduce(validators, context.ast, &expression!(context, {:validate, [], [&1]}, &2))
     end)
   end
 
@@ -230,76 +250,76 @@ defmodule Apix.Schema.Context do
 
   See `expression!/4` and `#{inspect Apix.Schema.Extensions.Elixir}.expression!/6` for usage examples.
   """
-  @spec inner_expression!(t(), Macro.t(), Ast.t(), Macro.Env.t()) :: Ast.t()
-  def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast]}, schema_ast, env), do: expression!(context, type_elixir_ast, schema_ast, env)
+  @spec inner_expression!(t(), Macro.t(), Ast.t()) :: Ast.t()
+  def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast]}, schema_ast), do: expression!(context, type_elixir_ast, schema_ast)
 
-  def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast, params]}, schema_ast, env) do
+  def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast, params]}, schema_ast) do
     block_elixir_ast = params[:do] || {:__block__, [], []}
     flags = Keyword.drop(params, [:params, :do])
 
-    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, type_elixir_ast, schema_ast)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast)
 
     schema_ast =
       struct(schema_ast,
-        params: normalize_params!(context, params, env),
+        params: normalize_params!(context, params),
         flags: flags
       )
 
     schema_ast
   end
 
-  def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast, params, [do: block_elixir_ast]]}, schema_ast, env) do
+  def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast, params, [do: block_elixir_ast]]}, schema_ast) do
     flags = Keyword.drop(params, [:params, :do])
 
-    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, type_elixir_ast, schema_ast)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast)
 
     schema_ast =
       struct(schema_ast,
-        params: normalize_params!(context, params, env),
+        params: normalize_params!(context, params),
         flags: flags
       )
 
     schema_ast
   end
 
-  def inner_expression!(%__MODULE__{} = context, {type_elixir_ast, _meta, [[do: block_elixir_ast]]}, schema_ast, env) do
-    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+  def inner_expression!(%__MODULE__{} = context, {type_elixir_ast, _meta, [[do: block_elixir_ast]]}, schema_ast) do
+    schema_ast = expression!(context, type_elixir_ast, schema_ast)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast)
 
     schema_ast
   end
 
-  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast], schema_ast, env), do: expression!(context, type_elixir_ast, schema_ast, env)
+  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast], schema_ast), do: expression!(context, type_elixir_ast, schema_ast)
 
-  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
-    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, [do: block_elixir_ast]], schema_ast) do
+    schema_ast = expression!(context, type_elixir_ast, schema_ast)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast)
 
     schema_ast
   end
 
-  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, flags_elixir_ast], schema_ast, env) do
-    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, env.binding, env)
+  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, flags_elixir_ast], schema_ast) do
+    {flags, _binding} = eval_quoted(flags_elixir_ast, context)
 
     schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
-    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, type_elixir_ast, schema_ast)
 
     schema_ast
   end
 
-  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, flags_elixir_ast, [do: block_elixir_ast]], schema_ast, env) do
-    {flags, _binding} = Code.eval_quoted(flags_elixir_ast, env.binding, env)
+  def inner_expression!(%__MODULE__{} = context, [type_elixir_ast, flags_elixir_ast, [do: block_elixir_ast]], schema_ast) do
+    {flags, _binding} = eval_quoted(flags_elixir_ast, context)
 
     schema_ast = struct(schema_ast, flags: schema_ast.flags ++ flags)
-    schema_ast = expression!(context, type_elixir_ast, schema_ast, env)
-    schema_ast = expression!(context, block_elixir_ast, schema_ast, env)
+    schema_ast = expression!(context, type_elixir_ast, schema_ast)
+    schema_ast = expression!(context, block_elixir_ast, schema_ast)
 
     schema_ast
   end
 
-  def inner_expression!(%__MODULE__{} = context, type_elixir_ast, schema_ast, env), do: expression!(context, type_elixir_ast, schema_ast, env)
+  def inner_expression!(%__MODULE__{} = context, type_elixir_ast, schema_ast), do: expression!(context, type_elixir_ast, schema_ast)
 
   @doc """
   TODO: Casts types.
@@ -312,17 +332,17 @@ defmodule Apix.Schema.Context do
   @doc """
   Normalizes params from `t:raw_params/0` to `t:params/0`
   """
-  @spec normalize_params!(t(), any(), Macro.Env.t()) :: params()
-  def normalize_params!(%__MODULE__{} = context, [_ | _] = raw_params, env) do
+  @spec normalize_params!(t(), any()) :: params()
+  def normalize_params!(%__MODULE__{} = context, [_ | _] = raw_params) do
     Enum.map(raw_params, fn
       zero_arity when is_atom(zero_arity) -> {zero_arity, 0, nil}
       {name, arity} when is_atom(name) and is_integer(arity) and arity >= 0 -> {name, arity, nil}
-      {name, {{:., _, _}, _, _} = elixir_ast} when is_atom(name) -> {name, 0, expression!(context, elixir_ast, nil, env)}
-      {name, {:\\, _, [arity, {{:., _, _}, _, _} = elixir_ast]}} when is_atom(name) and is_integer(arity) and arity >= 0 -> {name, arity, expression!(context, elixir_ast, nil, env)}
+      {name, {{:., _, _}, _, _} = elixir_ast} when is_atom(name) -> {name, 0, expression!(context, elixir_ast, nil)}
+      {name, {:\\, _, [arity, {{:., _, _}, _, _} = elixir_ast]}} when is_atom(name) and is_integer(arity) and arity >= 0 -> {name, arity, expression!(context, elixir_ast, nil)}
     end)
   end
 
-  def normalize_params!(_context, _raw_params, _env), do: []
+  def normalize_params!(_context, _raw_params), do: []
 
   @doc """
   Normalizes `t:#{inspect Ast}.t/0`. through all extensions.
@@ -351,42 +371,17 @@ defmodule Apix.Schema.Context do
   end
 
   @doc """
-  Builds map of delegates for efficient rewriting in `rewrite_delegates/2`.
+  Delegates to `Code.eval_quoted/3` with already defined binding
   """
-  @spec build_delegates(t()) :: %{
-          delegates: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}},
-          function_delegates: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}
-        }
-  def build_delegates(%__MODULE__{} = context) do
-    %{
-      delegates:
-        context.extensions
-        |> Enum.flat_map(fn extension ->
-          Enum.map(extension.delegates, fn {from, to} ->
-            {from, {to, extension}}
-          end)
-        end)
-        |> Map.new(),
-      function_delegates:
-        context.extensions
-        |> Enum.flat_map(fn extension ->
-          Enum.map(extension.function_delegates, fn {from, to} ->
-            {from, {to, extension}}
-          end)
-        end)
-        |> Map.new()
-    }
-  end
+  @spec eval_quoted(Macro.t(), t()) :: {term(), keyword()}
+  def eval_quoted(elixir_ast, context), do: Code.eval_quoted(elixir_ast, context.binding, context.env)
 
   @doc """
   Rewrites delegates in the AST node
   """
-  @spec rewrite_delegates(maybe_ast, %{
-          delegates: %{Extension.delegate_target() => {Extension.delegate_target(), Extension.t()}}
-        }) :: maybe_ast
-        when maybe_ast: Ast.t() | any()
-  def rewrite_delegates(%Ast{} = ast, delegates) do
-    delegates.delegates
+  @spec rewrite_delegates(maybe_ast, t()) :: maybe_ast when maybe_ast: Ast.t() | any()
+  def rewrite_delegates(%Ast{} = ast, context) do
+    context.delegates
     |> Map.get({ast.module, ast.schema})
     |> case do
       {{module, schema}, extension} ->
@@ -399,7 +394,7 @@ defmodule Apix.Schema.Context do
     end
   end
 
-  def rewrite_delegates(maybe_ast, _delegates), do: maybe_ast
+  def rewrite_delegates(maybe_ast, _context), do: maybe_ast
 
   @doc """
   Binds arguments to parameters.

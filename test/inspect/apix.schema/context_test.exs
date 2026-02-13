@@ -97,7 +97,11 @@ defmodule Inspect.Apix.Schema.ContextTest do
           errors: [],
           flags: [],
           extensions: [],
-          path: []
+          path: [],
+          delegates: %{},
+          function_delegates: %{},
+          binding: [],
+          env: nil
         }
         """
         |> String.trim_trailing()

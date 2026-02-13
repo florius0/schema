@@ -14,7 +14,7 @@ defmodule Apix.Schema.ExtensionTest do
       def install!(%Context{} = context), do: struct(context, flags: [:installed])
       def require!, do: :required!
       def validate_ast!(%Context{} = context), do: struct(context, flags: [:validated])
-      def expression!(_context, _elixir_ast, %Ast{} = ast, _env, _literal?), do: struct(ast, flags: [:expressed])
+      def expression!(_context, _elixir_ast, %Ast{} = ast, _literal?), do: struct(ast, flags: [:expressed])
       def normalize_ast!(_context, %Ast{} = ast), do: struct(ast, flags: [:normalized])
     end
 
@@ -39,9 +39,9 @@ defmodule Apix.Schema.ExtensionTest do
                Extension.validate_ast!(CallbackExtension.manifest(), %Context{})
     end
 
-    test "expression!/6" do
+    test "expression!/5" do
       assert %Ast{flags: [:expressed]} =
-               Extension.expression!(CallbackExtension.manifest(), %Context{}, :elixir_ast, %Ast{}, :env, false)
+               Extension.expression!(CallbackExtension.manifest(), %Context{}, :elixir_ast, %Ast{}, false)
     end
 
     test "normalize_ast!/3" do

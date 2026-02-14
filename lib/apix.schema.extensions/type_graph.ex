@@ -83,11 +83,11 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   This extension uses the following flags:
 
   - `:recursion` – to determine recursion evaluation strategy:
-    - `:all` (default)  means that `#{inspect Context}.t/0`/`#{inspect Ast}.t/0` must reference only other recursive definitions to be considered recursive.
+    - `:all` (default)  means that `t:#{inspect Context}.t/0`/`t:#{inspect Ast}.t/0` must reference only other recursive definitions to be considered recursive.
 
        Intended to be used for scalar types or container types with single type parameter semantics, such as `#{inspect Apix.Schema.Extensions.Elixir.MapSet}.t/0`
 
-    - `:at_least_one` means that `#{inspect Context}.t/0`/`#{inspect Ast}.t/0` must reference at least one other recursive definition to be considered recursive.
+    - `:at_least_one` means that `t:#{inspect Context}.t/0`/`t:#{inspect Ast}.t/0` must reference at least one other recursive definition to be considered recursive.
 
        Intended to be used for container types with multiple fields type parameters semantics, such as `#{inspect Apix.Schema.Extensions.Elixir.Map}.t/0`
   """
@@ -372,7 +372,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @doc group: "Internal"
   @doc """
-  Prunes graph of non-existent of stale `#{inspect Context}.t/0`.
+  Prunes graph of non-existent of stale `t:#{inspect Context}.t/0`.
 
   Intended to be called after either all code is compiled or on hot reloads before `validate!/0`.
   """

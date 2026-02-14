@@ -134,7 +134,7 @@ defmodule Apix.Schema.Extensions.TypeGraph.Graph do
   end
 
   @doc """
-  Like `:digraph.cyclic_strong_components/3`, but only traverses vertices/edges filtered by predicates.
+  Like `:digraph_utils.cyclic_strong_components/1`, but only traverses vertices/edges filtered by predicates.
 
   Returns list of strong components
   """

@@ -77,17 +77,24 @@ defmodule Apix.Schema.Context do
             binding: [],
             env: nil
 
+  @doc """
+  Returns default `t:t/0`, optionally with `t:#{inspect Extension}.t/0`(s) added.
+  """
+  @spec default([module()] | module() | nil) :: t()
   def default(extensions \\ nil) do
     extensions =
-      if is_list(extensions),
-        do: extensions,
-        else: Extension.config()
+      extensions
+      |> Kernel.||(Extension.config())
+      |> List.wrap()
 
     %__MODULE__{}
     |> add_extensions(extensions)
     |> install!()
   end
 
+  @doc """
+  Gets `t:t/0` from a module
+  """
   def get(module) do
     Module.get_attribute(module, :apix_schema_context)
   rescue
@@ -95,8 +102,14 @@ defmodule Apix.Schema.Context do
       module && is_atom(module) && Code.ensure_loaded?(module) && module.module_info(:attributes)[:apix_schema_context]
   end
 
+  @doc """
+  Gets `t:t/0` from a module or returns default `t:t/0`.
+  """
   def get_or_default(module_or_extensions \\ nil), do: get(module_or_extensions) || default(module_or_extensions)
 
+  @doc """
+  Puts `t:t/0` into a module during compilation
+  """
   def put(%__MODULE__{} = context, module) do
     Module.register_attribute(module, :apix_schema_context, persist: true)
     Module.put_attribute(module, :apix_schema_context, context)
@@ -113,7 +126,7 @@ defmodule Apix.Schema.Context do
   Extension can be passed as module which implements `#{inspect Extension}` behaviour, or the extension manifest (see `t:#{inspect Extension}.t/0`)
   Same extensions can not be added twice
   """
-  @spec add_extensions(t(), module() | Extension.t()) :: t()
+  @spec add_extensions(t(), module() | [module()] | Extension.t()) :: t()
   def add_extensions(%__MODULE__{} = context, extensions) do
     extensions =
       extensions
@@ -160,7 +173,7 @@ defmodule Apix.Schema.Context do
   @doc """
   Requires all extensions in the context.
 
-  See `#{inspect Extension}.require/1`.
+  See `#{inspect Extension}.require!/1`.
   """
   @spec require!(t()) :: Macro.t()
   def require!(%__MODULE__{} = context), do: Enum.map(context.extensions, &Extension.require!/1)
@@ -185,7 +198,7 @@ defmodule Apix.Schema.Context do
   @doc """
   Transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0` through all extensions.
 
-  See `#{inspect Extension}.expression!/6` and `c:#{inspect Extension}.expression!/5`.
+  See `#{inspect Extension}.expression!/5` and `c:#{inspect Extension}.expression!/4`.
   """
   @spec expression!(t(), Macro.t(), nil | Ast.t()) :: Ast.t()
   def expression!(%__MODULE__{} = context, elixir_ast, schema_ast \\ nil) do
@@ -214,7 +227,7 @@ defmodule Apix.Schema.Context do
   @doc """
   Transforms schema definition from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0`.
 
-  See `expression!/4`.
+  See `expression!/3`.
   """
   @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), keyword(), Macro.t()) :: t()
   def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, validators, flags, elixir_do_block_ast) do
@@ -246,9 +259,9 @@ defmodule Apix.Schema.Context do
   end
   ```.
 
-  Regular `expression!/4` only supports `Some.t([ ... ])`.
+  Regular `expression!/3` only supports `Some.t([ ... ])`.
 
-  See `expression!/4` and `#{inspect Apix.Schema.Extensions.Elixir}.expression!/6` for usage examples.
+  See `expression!/3` and `#{inspect Apix.Schema.Extensions.Elixir}` for usage examples.
   """
   @spec inner_expression!(t(), Macro.t(), Ast.t()) :: Ast.t()
   def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast]}, schema_ast), do: expression!(context, type_elixir_ast, schema_ast)

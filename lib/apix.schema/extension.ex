@@ -73,7 +73,7 @@ defmodule Apix.Schema.Extension do
   @callback install!(Context.t()) :: Context.t()
 
   @doc """
-  Optional callback to `#{inspect Kernel.SpecialForms}.require/1` extension.
+  Optional callback to `#{inspect Kernel.SpecialForms}.require/2` extension.
 
   Extensions may want to import functions/macros into the module.
   """
@@ -150,7 +150,7 @@ defmodule Apix.Schema.Extension do
   end
 
   @doc """
-  Invokes `c:expression!/5`
+  Invokes `c:expression!/4`
   """
   @spec expression!(t(), Context.t(), Macro.t(), Ast.t(), literal? :: boolean()) :: Ast.t() | false
   def expression!(%__MODULE__{module: m}, context, elixir_ast, schema_ast, literal?) do
@@ -178,7 +178,7 @@ defmodule Apix.Schema.Extension do
   ]
   ```
   """
-  @spec config() :: Keyword.t()
+  @spec config() :: [module()]
   def config, do: Application.get_env(:apix_schema, __MODULE__, [])
 
   @doc """

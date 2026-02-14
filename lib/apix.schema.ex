@@ -159,7 +159,7 @@ defmodule Apix.Schema do
   def msa(%Ast{module: m, schema: s, args: a}), do: {m, s, length(a)}
 
   @doc """
-  Maps `fun` to `t:#{inspect __MODULE__}.t/0`'s flags
+  Maps `fun` to `t:#{inspect Context}.t/0`'s or `t:#{inspect Ast}.t/0`'s flags
   """
   @spec map_flags(Context.t() | Ast.t(), ([any()] -> [any()])) :: Context.t() | Ast.t()
   def map_flags(%{flags: f} = context_or_ast, fun) when is_list(f) do
@@ -167,13 +167,13 @@ defmodule Apix.Schema do
   end
 
   @doc """
-  Adds `flags` to `t:#{inspect __MODULE__}.t/0`'s flags
+  Adds `flags` to `t:#{inspect Context}.t/0`'s or `t:#{inspect Ast}.t/0`'s flags
   """
   @spec add_flags(Context.t() | Ast.t(), any()) :: Context.t() | Ast.t()
   def add_flags(%{flags: f} = context_or_ast, flags) when is_list(f), do: map_flags(context_or_ast, &(&1 ++ List.wrap(flags)))
 
   @doc """
-  Removes `flags` to `t:#{inspect __MODULE__}.t/0`'s flags
+  Removes `flags` to `t:#{inspect Context}.t/0`'s or `t:#{inspect Ast}.t/0`'s flags
   """
   @spec remove_flags(Context.t() | Ast.t(), any()) :: Context.t() | Ast.t()
   def remove_flags(%{flags: f} = context_or_ast, flags) when is_list(f), do: map_flags(context_or_ast, &(&1 -- List.wrap(flags)))

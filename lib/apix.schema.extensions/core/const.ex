@@ -21,10 +21,12 @@ defmodule Apix.Schema.Extensions.Core.Const do
   @doc """
   Wraps value into `t:#{inspect __MODULE__}.t/0` if it isn't `#{inspect Ast}.t/0` or `t:#{inspect Context}.t/0`.
   """
-  def maybe_wrap(%Ast{} = ast), do: ast
-  def maybe_wrap(%Context{} = context), do: context
+  def maybe_wrap(arg, ast \\ %Ast{})
 
-  def maybe_wrap(arg, ast \\ %Ast{}) do
+  def maybe_wrap(%Ast{} = ast, _ast), do: ast
+  def maybe_wrap(%Context{} = context, _ast), do: context
+
+  def maybe_wrap(arg, ast) do
     struct(ast,
       module: Const,
       schema: :t,

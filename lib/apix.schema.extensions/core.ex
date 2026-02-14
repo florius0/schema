@@ -483,6 +483,7 @@ defmodule Apix.Schema.Extensions.Core do
       true ->
         elixir_ast
         |> Context.eval_quoted(context)
+        |> elem(0)
         |> Const.maybe_wrap(schema_ast)
     end
   end

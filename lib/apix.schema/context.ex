@@ -78,14 +78,14 @@ defmodule Apix.Schema.Context do
             env: nil
 
   @doc """
-  Returns default `t:t/0`, optionally with `t:#{inspect Extension}.t/0`(s) added.
+  Returns default `t:t/0`, optionally with `t:#{inspect Extension}.t/0`s added.
   """
-  @spec default([module()] | module() | nil) :: t()
+  @spec default([module()] | nil) :: t()
   def default(extensions \\ nil) do
     extensions =
-      extensions
-      |> Kernel.||(Extension.config())
-      |> List.wrap()
+      if is_list(extensions),
+        do: extensions,
+        else: Extension.config()
 
     %__MODULE__{}
     |> add_extensions(extensions)

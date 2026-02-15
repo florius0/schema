@@ -176,22 +176,42 @@ defmodule Apix.Schema.Extensions.Core do
       end
       |> struct(data: it)
 
-    context_or_ast
-    |> case do
-      %Ast{} = ast ->
-        ast.validators
+    ast =
+      case context_or_ast do
+        %Ast{} = ast ->
+          ast
 
-      %Context{} = context ->
-        context.ast.validators
+        %Context{} = context ->
+          context.ast
+      end
+
+    result =
+      Enum.reduce(ast.validators, {:ok, context}, fn
+        validator, {:ok, context} ->
+          invoke_validator(context, validator)
+
+        validator, {:error, context} ->
+          {_status, context} = invoke_validator(context, validator)
+          {:error, context}
+      end)
+
+    with {:ok, _context} <- result,
+         parent_context = %Context{module: m, schema: s} when not is_nil(m) or not is_nil(s) <- Apix.Schema.get_schema(ast),
+         parent_context <- Context.bind_args(parent_context, ast.args),
+         {:ok, _parent_context} <- validate_context(it, parent_context) do
+      result
+    else
+      # parent_context not found, stop recursion
+      nil ->
+        result
+
+      # Empty parent_context, stop recursion
+      %Context{module: nil, schema: nil} ->
+        result
+
+      error ->
+        error
     end
-    |> Enum.reduce({:ok, context}, fn
-      validator, {:ok, context} ->
-        invoke_validator(context, validator)
-
-      validator, {:error, context} ->
-        {_status, context} = invoke_validator(context, validator)
-        {:error, context}
-    end)
   end
 
   defp invoke_validator(context, {m, f, a} = _validator) do

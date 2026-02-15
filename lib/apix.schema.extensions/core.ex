@@ -164,7 +164,7 @@ defmodule Apix.Schema.Extensions.Core do
   Wraps `it` in `t:#{inspect Context}.t/0` and validates it
   """
   @spec validate_context(any(), Context.t() | Ast.t()) :: {:ok, Context.t()} | {:error, Context.t()}
-  def validate_context(it, context_or_ast) do
+  def validate_context(it, context_or_ast) when is_struct(context_or_ast, Context) or is_struct(context_or_ast, Ast) do
     context =
       context_or_ast
       |> case do

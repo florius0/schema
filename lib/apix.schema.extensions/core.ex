@@ -185,29 +185,27 @@ defmodule Apix.Schema.Extensions.Core do
           context.ast
       end
 
-    result =
-      Enum.reduce(ast.validators, {:ok, context}, fn
-        validator, {:ok, context} ->
-          invoke_validator(context, validator)
-
-        validator, {:error, context} ->
-          {_status, context} = invoke_validator(context, validator)
-          {:error, context}
-      end)
-
-    with {:ok, _context} <- result,
-         parent_context = %Context{module: m, schema: s} when not is_nil(m) or not is_nil(s) <- Apix.Schema.get_schema(ast),
+    with parent_context = %Context{module: m, schema: s} when not is_nil(m) or not is_nil(s) <- Apix.Schema.get_schema(ast),
          parent_context <- Context.bind_args(parent_context, ast.args),
-         {:ok, _parent_context} <- validate_context(it, parent_context) do
-      result
+         {:ok, _parent_context} <- validate_context(it, parent_context),
+         {:ok, context} <-
+           Enum.reduce(ast.validators, {:ok, context}, fn
+             validator, {:ok, context} ->
+               invoke_validator(context, validator)
+
+             validator, {:error, context} ->
+               {_status, context} = invoke_validator(context, validator)
+               {:error, context}
+           end) do
+      {:ok, context}
     else
       # parent_context not found, stop recursion
       nil ->
-        result
+        {:ok, context}
 
       # Empty parent_context, stop recursion
       %Context{module: nil, schema: nil} ->
-        result
+        {:ok, context}
 
       error ->
         error

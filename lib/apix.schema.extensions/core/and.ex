@@ -6,7 +6,7 @@ defmodule Apix.Schema.Extensions.Core.And do
 
   @moduledoc false
 
-  schema t: _, params: [:schema1, :schema2] do
+  schema t: _, kind: :meta, params: [:schema1, :schema2] do
     validate valid?(it, schema1()) and valid?(it, schema2())
 
     relate %Context{module: __MODULE__, schema: :t, params: [_schema1, _schema2]} = _it, _to, do: []

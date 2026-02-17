@@ -1,17 +1,7 @@
 defmodule Apix.Schema.Extensions.Core.Any do
   use Apix.Schema
 
-  alias Apix.Schema.Ast
-  alias Apix.Schema.Context
-
-  alias Apix.Schema.Ast.Meta
-
-  alias Apix.Schema.Extensions.Core
-
   @moduledoc false
-
-  @boolean_schemas Core.boolean_schemas()
-  @it_ast %Ast{module: __MODULE__, schema: :t, args: []} |> Meta.maybe_put_in(env: __ENV__, generated_by: Core.manifest())
 
   schema t: _ do
     validate true
@@ -25,16 +15,18 @@ defmodule Apix.Schema.Extensions.Core.Any do
       ]
     end
 
-    relationship _it, %Context{module: m} = _peer, existing when m in @boolean_schemas, do: existing
-
-    relationship %Context{} = it, peer, existing do
-      [
-        {:subtype, peer, @it_ast},
-        {:subtype, @it_ast, it},
-        {:supertype, peer, @it_ast},
-        {:supertype, @it_ast, it}
-        | existing
-      ]
+    relationship it, peer, existing do
+      if peer.flags[:kind] == :meta do
+        existing
+      else
+        [
+          {:subtype, peer, it},
+          {:subtype, it, it},
+          {:supertype, peer, it},
+          {:supertype, it, it}
+          | existing
+        ]
+      end
     end
   end
 end

@@ -102,7 +102,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - `t:#{inspect Ast}.t/0` and `t:#{inspect Context}.t/0` referencing same schema are subtypes.
   """
   defmacro subtype?(subtype, supertype) do
-    quote do
+    quote location: :keep do
       binding = binding()
 
       context =
@@ -143,7 +143,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   - `t:#{inspect Ast}.t/0` and `t:#{inspect Context}.t/0` referencing same schema are supertypes.
   """
   defmacro supertype?(subtype, supertype) do
-    quote do
+    quote location: :keep do
       binding = binding()
 
       context =
@@ -182,7 +182,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   Note that this function knows nothing about the semantics of the graph, it just finds a path matching the `predicate`.
   """
   defmacro path_exists?(from, to, predicate) do
-    quote do
+    quote location: :keep do
       binding = binding()
 
       context =
@@ -616,14 +616,14 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @impl Extension
   def require! do
-    quote do
+    quote location: :keep do
       import unquote(__MODULE__), only: [path_exists?: 3, subtype?: 2, supertype?: 2]
     end
   end
 
   @impl Extension
   def expression!(context, {:relate, _, [arg1, {:when, _, [arg2, guard]}, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
-    quote do
+    quote location: :keep do
       def __apix_schema_relate__(unquote(arg1), unquote(arg2)) when unquote(guard), do: unquote(block)
     end
     |> Context.eval_quoted(context)
@@ -632,7 +632,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   end
 
   def expression!(context, {:relate, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
-    quote do
+    quote location: :keep do
       def __apix_schema_relate__(unquote(arg1), unquote(arg2)), do: unquote(block)
     end
     |> Context.eval_quoted(context)
@@ -657,7 +657,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   end
 
   def expression!(context, {:relationship, _, [arg1, arg2, {:when, _, [arg3, guard]}, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
-    quote do
+    quote location: :keep do
       def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)) when unquote(guard), do: unquote(block)
     end
     |> Context.eval_quoted(context)
@@ -666,7 +666,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
   end
 
   def expression!(context, {:relationship, _, [arg1, arg2, arg3, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
-    quote do
+    quote location: :keep do
       def __apix_schema_relationship__(unquote(arg1), unquote(arg2), unquote(arg3)), do: unquote(block)
     end
     |> Context.eval_quoted(context)

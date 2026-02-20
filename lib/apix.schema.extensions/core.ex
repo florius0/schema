@@ -179,28 +179,31 @@ defmodule Apix.Schema.Extensions.Core do
     with parent_context = %Context{module: m, schema: s} when not is_nil(m) or not is_nil(s) <- Apix.Schema.get_schema(ast),
          parent_context <- Context.bind_args(parent_context, ast.args),
          {:ok, _parent_context} <- validate_context(it, parent_context),
-         {:ok, context} <-
-           Enum.reduce(ast.validators, {:ok, context}, fn
-             validator, {:ok, context} ->
-               invoke_validator(context, validator)
-
-             validator, {:error, context} ->
-               {_status, context} = invoke_validator(context, validator)
-               {:error, context}
-           end) do
+         {:ok, context} <- validate_current_context(ast, context) do
       {:ok, context}
     else
       # parent_context not found, stop recursion
       nil ->
-        {:ok, context}
+        validate_current_context(ast, context)
 
       # Empty parent_context, stop recursion
       %Context{module: nil, schema: nil} ->
-        {:ok, context}
+        validate_current_context(ast, context)
 
       error ->
         error
     end
+  end
+
+  defp validate_current_context(ast, context) do
+    Enum.reduce(ast.validators, {:ok, context}, fn
+      validator, {:ok, context} ->
+        invoke_validator(context, validator)
+
+      validator, {:error, context} ->
+        {_status, context} = invoke_validator(context, validator)
+        {:error, context}
+    end)
   end
 
   defp invoke_validator(context, {m, f, a} = _validator) do
@@ -317,14 +320,17 @@ defmodule Apix.Schema.Extensions.Core do
     struct(schema_ast, validators: [{context.env.module, name, []} | schema_ast.validators])
   end
 
+  @macro_it {:it, [generated: true], nil}
+  @macro_context {:context, [generated: true], nil}
+
   def expression!(context, {:validate, _, [[do: block]]} = elixir_ast, schema_ast, _literal?) do
     name = :"__apix_schema_validate_#{:erlang.phash2(elixir_ast)}__"
     block = rewrite_validator_do_block(context, block)
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context) do
-        var!(it) = it
-        var!(context) = context
+        unquote(@macro_it) = it
+        unquote(@macro_context) = context
 
         unquote(block)
       end
@@ -340,8 +346,8 @@ defmodule Apix.Schema.Extensions.Core do
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: it} = context) do
-        var!(it) = it
-        var!(context) = context
+        unquote(@macro_it) = it
+        unquote(@macro_context) = context
 
         unquote(block)
       end
@@ -357,8 +363,8 @@ defmodule Apix.Schema.Extensions.Core do
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = context) when unquote(guard) do
-        var!(it) = it
-        var!(context) = context
+        unquote(@macro_it) = it
+        unquote(@macro_context) = context
 
         unquote(block)
       end
@@ -376,8 +382,8 @@ defmodule Apix.Schema.Extensions.Core do
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = context) do
-        var!(it) = it
-        var!(context) = context
+        unquote(@macro_it) = it
+        unquote(@macro_context) = context
 
         unquote(block)
       end
@@ -395,8 +401,8 @@ defmodule Apix.Schema.Extensions.Core do
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = unquote(arg2) = context) when unquote(guard) do
-        var!(it) = it
-        var!(context) = context
+        unquote(@macro_it) = it
+        unquote(@macro_context) = context
 
         unquote(block)
       end
@@ -414,8 +420,8 @@ defmodule Apix.Schema.Extensions.Core do
 
     quote generated: true do
       def unquote(name)(%Apix.Schema.Context{data: unquote(arg1) = it} = unquote(arg2) = context) do
-        var!(it) = it
-        var!(context) = context
+        unquote(@macro_it) = it
+        unquote(@macro_context) = context
 
         unquote(block)
       end
@@ -566,12 +572,27 @@ defmodule Apix.Schema.Extensions.Core do
         args = Enum.map(args, &Context.inner_expression!(context, &1, %Ast{}))
 
         quote generated: true do
-          context.params[unquote(name)]
+          unquote(@macro_context)
+          |> Map.fetch!(:params)
+          |> List.keyfind!(unquote(name), 0)
+          |> elem(2)
           |> Kernel.||(unquote(default))
-          |> struct(args: unquote(args))
+          |> case do
+            nil ->
+              nil
+
+            %Ast{args: []} = param ->
+              struct(param, args: unquote(args))
+
+            param ->
+              param
+          end
         end
 
-      {{:., _meta1, [{name, _meta, _args} = module, schema]}, _meta3, args} = elixir_ast when name not in [:it, :context] ->
+      {{:., _meta1, _args1}, [{:no_parens, true} | _] = _meta2, _args2} = elixir_ast ->
+        elixir_ast
+
+      {{:., _meta1, [{name, _meta2, _args} = module, schema]}, _meta, args} = elixir_ast when name not in [:it, :context] ->
         {module, _binding} = Context.eval_quoted(module, context)
         arity = length(args)
 

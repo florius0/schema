@@ -99,7 +99,17 @@ defmodule Apix.Schema.Context do
     Module.get_attribute(module, :apix_schema_context)
   rescue
     _ in [ArgumentError, FunctionClauseError] ->
-      module && is_atom(module) && Code.ensure_loaded?(module) && module.module_info(:attributes)[:apix_schema_context]
+      module
+      |> Kernel.&&(is_atom(module))
+      |> Kernel.&&(Code.ensure_loaded?(module))
+      |> Kernel.&&(module.module_info(:attributes)[:apix_schema_context])
+      |> case do
+        [context | _] ->
+          context
+
+        _ ->
+          nil
+      end
   end
 
   @doc """

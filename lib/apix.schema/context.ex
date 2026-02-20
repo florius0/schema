@@ -387,7 +387,15 @@ defmodule Apix.Schema.Context do
   Delegates to `Code.eval_quoted/3` with already defined binding
   """
   @spec eval_quoted(Macro.t(), t()) :: {term(), keyword()}
-  def eval_quoted(elixir_ast, context), do: Code.eval_quoted(elixir_ast, context.binding, context.env)
+  def eval_quoted(elixir_ast, context) do
+    if context.flags[:dbg?] do
+      IO.inspect(context)
+      elixir_ast |> Macro.to_string() |> IO.puts()
+      IO.puts("")
+    end
+
+    Code.eval_quoted(elixir_ast, context.binding, context.env)
+  end
 
   @doc """
   Rewrites delegates in the AST node

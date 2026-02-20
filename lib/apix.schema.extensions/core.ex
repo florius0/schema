@@ -160,7 +160,9 @@ defmodule Apix.Schema.Extensions.Core do
       context_or_ast
       |> case do
         %Ast{} = ast ->
-          Apix.Schema.get_schema(ast)
+          ast
+          |> Apix.Schema.get_schema()
+          |> Context.bind_args(ast.args)
 
         %Context{} = context ->
           context

@@ -173,11 +173,11 @@ defmodule Apix.Schema.Ast do
       ast.args
       |> Enum.reverse()
       |> case do
-        [last | rest] ->
+        [last | rest] when is_list(last) ->
           {last, rest}
 
-        [] ->
-          {[], []}
+        rest ->
+          {[], rest}
       end
 
     struct(ast, args: Enum.reverse([fun.(last) | rest]))

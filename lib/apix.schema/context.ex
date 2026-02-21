@@ -428,6 +428,34 @@ defmodule Apix.Schema.Context do
   def rewrite_delegates(maybe_ast, _context), do: maybe_ast
 
   @doc """
+  Returns true if name/arity pair is in the params
+  """
+  @spec param?(t(), atom(), arity()) :: boolean()
+  def param?(context, name, arity) do
+    Enum.find_value(context.params, fn
+      {^name, ^arity, _value} ->
+        true
+
+      _ ->
+        false
+    end)
+  end
+
+  @doc """
+  Gets parameter by its name and arity
+  """
+  @spec get_param(t(), atom(), arity()) :: any()
+  def get_param(context, name, arity) do
+    Enum.find_value(context.params, fn
+      {^name, ^arity, value} ->
+        value
+
+      _ ->
+        nil
+    end)
+  end
+
+  @doc """
   Binds arguments to parameters.
   """
   @spec bind_args(t(), [Ast.t()]) :: t()

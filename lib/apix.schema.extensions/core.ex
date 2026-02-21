@@ -509,31 +509,6 @@ defmodule Apix.Schema.Extensions.Core do
     schema_ast
   end
 
-  def expression!(context, {name, meta, elixir_context}, schema_ast, false) when is_atom(name) and is_atom(elixir_context) do
-    args = []
-    arity = 0
-
-    if name in Keyword.keys(context.binding) do
-      {name, meta, nil}
-      |> Context.eval_quoted(context)
-      |> elem(0)
-      |> Const.maybe_wrap()
-    else
-      Enum.find_value(context.params, fn
-        {^name, ^arity, _} ->
-          struct(schema_ast,
-            module: nil,
-            schema: name,
-            args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast)),
-            parameter?: true
-          )
-
-        _ ->
-          false
-      end)
-    end
-  end
-
   def expression!(context, {name, _, args}, schema_ast, false) when is_atom(name) and is_list(args) do
     args =
       if is_list(args),
@@ -542,18 +517,13 @@ defmodule Apix.Schema.Extensions.Core do
 
     arity = length(args)
 
-    Enum.find_value(context.params, fn
-      {^name, ^arity, _} ->
+    Context.param?(context, name, arity) &&
         struct(schema_ast,
           module: nil,
           schema: name,
           args: Enum.map(args, &Context.inner_expression!(context, &1, schema_ast)),
           parameter?: true
         )
-
-      _ ->
-        false
-    end)
   end
 
   def expression!(_context, _elixir_ast, _schema_ast, _literal?), do: false

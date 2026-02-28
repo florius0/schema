@@ -616,7 +616,7 @@ defmodule Apix.Schema.Extensions.TypeGraph do
 
   @impl Extension
   def require! do
-    quote do
+    quote generated: true do
       import unquote(__MODULE__), only: [path_exists?: 3, subtype?: 2, supertype?: 2]
     end
   end

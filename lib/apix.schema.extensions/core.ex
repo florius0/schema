@@ -192,8 +192,9 @@ defmodule Apix.Schema.Extensions.Core do
       %Context{module: nil, schema: nil} ->
         validate_current_context(ast, context)
 
-      error ->
-        error
+      # Wrap back errors into original context
+      {:error, %Context{errors: errors}} ->
+        {:error, struct(context, context: context.errors ++ errors)}
     end
   end
 

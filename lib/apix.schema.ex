@@ -37,7 +37,7 @@ defmodule Apix.Schema do
     if __CALLER__.module do
       Module.register_attribute(__CALLER__.module, :apix_schemas, accumulate: true)
 
-      quote location: :keep do
+      quote do
         import Apix.Schema, only: [schema: 1, schema: 2]
 
         unquote(Context.require!(context))
@@ -46,7 +46,7 @@ defmodule Apix.Schema do
         @after_compile unquote(__MODULE__)
       end
     else
-      quote location: :keep do
+      quote do
         import Apix.Schema
 
         unquote(Context.require!(context))
@@ -103,7 +103,7 @@ defmodule Apix.Schema do
     env.module
     |> Module.get_attribute(:apix_schemas, [])
 
-    quote location: :keep do
+    quote do
       def __apix_schemas__, do: Map.new(@apix_schemas, &{{&1.module, &1.schema, length(&1.params)}, &1})
     end
   end

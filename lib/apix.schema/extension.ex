@@ -133,7 +133,7 @@ defmodule Apix.Schema.Extension do
     if function_exported?(m, :require!, 0) do
       m.require!()
     else
-      quote location: :keep do
+      quote do
         require unquote(m)
       end
     end

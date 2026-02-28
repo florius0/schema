@@ -99,7 +99,7 @@ defmodule Apix.Schema.Extensions.Core do
   Returns true if `it` is valid against given schema.
   """
   defmacro valid?(it, schema) do
-    quote location: :keep do
+    quote do
       binding = binding()
 
       context =
@@ -134,7 +134,7 @@ defmodule Apix.Schema.Extensions.Core do
   Returns :ok if `it` is valid against given schema.
   """
   defmacro validate(it, schema) do
-    quote location: :keep do
+    quote do
       binding = binding()
 
       context =

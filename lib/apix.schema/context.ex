@@ -203,31 +203,40 @@ defmodule Apix.Schema.Context do
     context
   end
 
-  @dialyzer {:no_return, expression!: 3}
-
   @doc """
   Transforms schema expression from `t:#{inspect Macro}.t/0` into `t:#{inspect Ast}.t/0` through all extensions.
 
   See `#{inspect Extension}.expression!/5` and `c:#{inspect Extension}.expression!/4`.
   """
-  @spec expression!(t(), Macro.t(), nil | Ast.t()) :: Ast.t()
+  @spec expression!(t(), Macro.t(), nil | Ast.t()) :: Macro.t()
   def expression!(%__MODULE__{} = context, elixir_ast, schema_ast \\ nil) do
-    schema_ast = schema_ast || context.ast
+    schema_ast =
+      schema_ast
+      |> Kernel.||(context.ast)
+      |> Macro.escape(unquote: true)
 
-    prewalker = fn elixir_ast, schema_ast ->
-      context.extensions
-      |> Enum.find_value(fn extension ->
+    prewalker =
+      &Enum.reduce_while(context.extensions, {&1, &2}, fn extension, {elixir_ast, schema_ast} ->
         extension
         |> Extension.expression!(context, elixir_ast, schema_ast, Macro.quoted_literal?(elixir_ast))
-        |> rewrite_delegates(context)
-        |> Meta.maybe_put_in(env: context.env, elixir_ast: elixir_ast, generated_by: extension)
+        |> case do
+          :"$skip" ->
+            {:cont, {elixir_ast, schema_ast}}
+
+          schema_ast ->
+            # schema_ast =
+            #   quote do
+            #     Meta.maybe_put_in(
+            #       unquote(schema_ast),
+            #       env: unquote(Macro.escape(context.env)),
+            #       elixir_ast: unquote(Macro.escape(elixir_ast)),
+            #       generated_by: extension
+            #     )
+            #   end
+
+            {:halt, {elixir_ast, schema_ast}}
+        end
       end)
-      |> case do
-        %Ast{} = schema_ast -> {schema_ast, schema_ast}
-        %__MODULE__{} = context -> {context, context}
-        _ -> {elixir_ast, schema_ast}
-      end
-    end
 
     elixir_ast
     |> Macro.prewalk(schema_ast, prewalker)
@@ -241,18 +250,20 @@ defmodule Apix.Schema.Context do
   """
   @spec schema_definition_expression!(t(), schema_name :: atom(), Macro.t(), params(), Macro.t(), keyword(), Macro.t()) :: t()
   def schema_definition_expression!(%__MODULE__{} = context, schema_name, elixir_type_ast, params, validators, flags, elixir_do_block_ast) do
-    context
-    |> struct(
-      module: context.env.module,
-      schema: schema_name,
-      params: normalize_params!(context, params),
-      flags: flags
-    )
-    |> map_ast(&expression!(&1, elixir_type_ast))
-    |> map_ast(&expression!(&1, elixir_do_block_ast))
-    |> map_ast(fn context ->
-      Enum.reduce(validators, context.ast, &expression!(context, {:validate, [], [&1]}, &2))
-    end)
+    expression!(context, elixir_type_ast)
+    # context
+    # |> struct(
+    #   module: context.env.module,
+    #   schema: schema_name,
+    #   params: normalize_params!(context, params),
+    #   flags: flags
+    # )
+
+    # |> map_ast(&expression!(&1, elixir_type_ast))
+    # |> map_ast(&expression!(&1, elixir_do_block_ast))
+    # |> map_ast(fn context ->
+    #   Enum.reduce(validators, context.ast, &expression!(context, {:validate, [], [&1]}, &2))
+    # end)
   end
 
   @doc """
@@ -274,6 +285,8 @@ defmodule Apix.Schema.Context do
   See `expression!/3` and `#{inspect Apix.Schema.Extensions.Elixir}` for usage examples.
   """
   @spec inner_expression!(t(), Macro.t(), Ast.t()) :: Ast.t()
+  def inner_expression!(context, elixir_ast, schema_ast \\ quote(do: %Ast{}))
+
   def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast]}, schema_ast), do: expression!(context, type_elixir_ast, schema_ast)
 
   def inner_expression!(%__MODULE__{} = context, {:schema, _meta, [type_elixir_ast, params]}, schema_ast) do
@@ -358,10 +371,17 @@ defmodule Apix.Schema.Context do
   @spec normalize_params!(t(), any()) :: params()
   def normalize_params!(%__MODULE__{} = context, [_ | _] = raw_params) do
     Enum.map(raw_params, fn
-      zero_arity when is_atom(zero_arity) -> {zero_arity, 0, nil}
-      {name, arity} when is_atom(name) and is_integer(arity) and arity >= 0 -> {name, arity, nil}
-      {name, {{:., _, _}, _, _} = elixir_ast} when is_atom(name) -> {name, 0, expression!(context, elixir_ast, nil)}
-      {name, {:\\, _, [arity, {{:., _, _}, _, _} = elixir_ast]}} when is_atom(name) and is_integer(arity) and arity >= 0 -> {name, arity, expression!(context, elixir_ast, nil)}
+      zero_arity when is_atom(zero_arity) ->
+        {zero_arity, 0, nil}
+
+      {name, arity} when is_atom(name) and is_integer(arity) and arity >= 0 ->
+        {name, arity, nil}
+
+      {name, {{:., _, _}, _, _} = elixir_ast} when is_atom(name) ->
+        {name, 0, expression!(context, elixir_ast, nil)}
+
+      {name, {:\\, _, [arity, {{:., _, _}, _, _} = elixir_ast]}} when is_atom(name) and is_integer(arity) and arity >= 0 ->
+        {name, arity, expression!(context, elixir_ast, nil)}
     end)
   end
 

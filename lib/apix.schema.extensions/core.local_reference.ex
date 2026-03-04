@@ -40,18 +40,19 @@ defmodule Apix.Schema.Extensions.Core.LocalReference do
     arity = length(args)
 
     if {schema, arity} in Enum.flat_map(context.env.functions ++ context.env.macros, &elem(&1, 1)) do
-      elixir_ast
-      |> Context.eval_quoted(context)
-      |> elem(0)
-      |> Const.maybe_wrap(schema_ast)
+      quote do
+        Const.maybe_wrap(unquote(elixir_ast), unquote(schema_ast))
+      end
     else
-      struct(schema_ast,
-        module: context.env.module,
-        schema: schema,
-        args: Enum.map(args, &Context.expression!(context, &1, schema_ast))
-      )
+      quote do
+        struct(unquote(schema_ast),
+          module: unquote(context.env.module),
+          schema: unquote(schema),
+          args: unquote(Enum.map(args, &Context.expression!(context, &1, schema_ast)))
+        )
+      end
     end
   end
 
-  def expression!(_context, _ast, _schema_ast, _literal?), do: false
+  def expression!(_context, _ast, _schema_ast, _literal?), do: :"$skip"
 end

@@ -628,7 +628,15 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end
     |> Context.eval_quoted(context)
 
-    struct(schema_ast, relates: Enum.uniq([{context.env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
+    quote do
+      struct(unquote(schema_ast),
+        relates:
+          Enum.uniq([
+            {unquote(context.env.module), :__apix_schema_relate__, []}
+            | unquote(schema_ast).relates
+          ])
+      )
+    end
   end
 
   def expression!(context, {:relate, _, [arg1, arg2, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
@@ -637,23 +645,48 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end
     |> Context.eval_quoted(context)
 
-    struct(schema_ast, relates: Enum.uniq([{context.env.module, :__apix_schema_relate__, []} | schema_ast.relates]))
+    quote do
+      struct(unquote(schema_ast),
+        relates:
+          Enum.uniq([
+            {unquote(context.env.module), :__apix_schema_relate__, []}
+            | unquote(schema_ast).relates
+          ])
+      )
+    end
   end
 
-  def expression!(context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, _literal?) do
-    {module, _binding} = Context.eval_quoted(module, context)
-
-    struct(schema_ast, relates: [{module, function, []} | schema_ast.relates])
+  def expression!(_context, {:relate, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 2]}]}]} = _elixir_ast, schema_ast, _literal?) do
+    quote do
+      struct(unquote(schema_ast),
+        relates: [
+          {unquote(module), unquote(function), []}
+          | unquote(schema_ast).relates
+        ]
+      )
+    end
   end
 
   def expression!(context, {:relate, _, [{:&, _, [{:/, _, [{function, _, _}, 2]}]}]} = _elixir_ast, schema_ast, _literal?) do
-    struct(schema_ast, relates: [{context.env.module, function, []} | schema_ast.relates])
+    quote do
+      struct(unquote(schema_ast),
+        relates: [
+          {unquote(context.env.module), unquote(function), []}
+          | unquote(schema_ast).relates
+        ]
+      )
+    end
   end
 
-  def expression!(context, {:relate, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, _literal?) do
-    {mfa, _binding} = Context.eval_quoted(mfa, context)
-
-    struct(schema_ast, relates: [mfa | schema_ast.relates])
+  def expression!(_context, {:relate, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, _literal?) do
+    quote do
+      struct(unquote(schema_ast),
+        relates: [
+          unquote(mfa)
+          | unquote(schema_ast).relates
+        ]
+      )
+    end
   end
 
   def expression!(context, {:relationship, _, [arg1, arg2, {:when, _, [arg3, guard]}, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
@@ -662,7 +695,15 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end
     |> Context.eval_quoted(context)
 
-    struct(schema_ast, relationships: Enum.uniq([{context.env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
+    quote do
+      struct(unquote(schema_ast),
+        relationships:
+          Enum.uniq([
+            {unquote(context.env.module), :__apix_schema_relationship__, []}
+            | unquote(schema_ast).relationships
+          ])
+      )
+    end
   end
 
   def expression!(context, {:relationship, _, [arg1, arg2, arg3, [do: block]]} = _elixir_ast, schema_ast, _literal?) do
@@ -671,26 +712,51 @@ defmodule Apix.Schema.Extensions.TypeGraph do
     end
     |> Context.eval_quoted(context)
 
-    struct(schema_ast, relationships: Enum.uniq([{context.env.module, :__apix_schema_relationship__, []} | schema_ast.relationships]))
+    quote do
+      struct(unquote(schema_ast),
+        relationships:
+          Enum.uniq([
+            {unquote(context.env.module), :__apix_schema_relationship__, []}
+            | unquote(schema_ast).relationships
+          ])
+      )
+    end
   end
 
-  def expression!(context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 3]}]}]} = _elixir_ast, schema_ast, _literal?) do
-    {module, _binding} = Context.eval_quoted(module, context)
-
-    struct(schema_ast, relationships: [{module, function, []} | schema_ast.relationships])
+  def expression!(_context, {:relationship, _, [{:&, _, [{:/, _, [{{:., _, [module, function]}, _, []}, 3]}]}]} = _elixir_ast, schema_ast, _literal?) do
+    quote do
+      struct(unquote(schema_ast),
+        relationships: [
+          {unquote(module), unquote(function), []}
+          | unquote(schema_ast).relationships
+        ]
+      )
+    end
   end
 
   def expression!(context, {:relationship, _, [{:&, _, [{:/, _, [{function, _, _}, 3]}]}]} = _elixir_ast, schema_ast, _literal?) do
-    struct(schema_ast, relationships: [{context.env.module, function, []} | schema_ast.relationships])
+    quote do
+      struct(unquote(schema_ast),
+        relationships: [
+          {unquote(context.env.module), unquote(function), []}
+          | unquote(schema_ast).relationships
+        ]
+      )
+    end
   end
 
-  def expression!(context, {:relationship, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, _literal?) do
-    {mfa, _binding} = Context.eval_quoted(mfa, context)
-
-    struct(schema_ast, relationships: [mfa | schema_ast.relationships])
+  def expression!(_context, {:relationship, _, [{:{}, _, [_m, _f, _a]} = mfa]} = _elixir_ast, schema_ast, _literal?) do
+    quote do
+      struct(unquote(schema_ast),
+        relationships: [
+          unquote(mfa)
+          | unquote(schema_ast.relationships)
+        ]
+      )
+    end
   end
 
-  def expression!(_context, _elixir_ast, _schema_ast, _literal?), do: false
+  def expression!(_context, _elixir_ast, _schema_ast, _literal?), do: :"$skip"
 
   @impl Extension
   def validate_ast!(context) do

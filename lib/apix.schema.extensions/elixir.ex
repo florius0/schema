@@ -165,45 +165,53 @@ defmodule Apix.Schema.Extensions.Elixir do
 
   @impl Extension
   def expression!(context, {:item, _, elixir_ast}, schema_ast, _literal?) do
-    type = Context.inner_expression!(context, elixir_ast, %Ast{})
+    type = Context.inner_expression!(context, elixir_ast)
 
-    Ast.add_keyword_args(schema_ast, item: type)
+    quote do
+      Ast.add_keyword_args(unquote(schema_ast), item: unquote(type))
+    end
   end
 
   def expression!(context, {:rest, _, elixir_ast}, schema_ast, _literal?) do
-    type = Context.inner_expression!(context, elixir_ast, %Ast{})
+    type = Context.inner_expression!(context, elixir_ast)
 
-    Ast.add_keyword_args(schema_ast, rest: type)
+    quote do
+      Ast.add_keyword_args(unquote(schema_ast), rest: unquote(type))
+    end
   end
 
   def expression!(context, {:field, _, elixir_ast}, schema_ast, _literal?) do
-    {key_type, value_type} =
-      if match?([do: {:__block__, _, [{:key, _, _}, {:value, _, _} | _]}], Elixir.List.last(elixir_ast)) do
-        {
-          flags,
-          [[do: {:__block__, _, [{:key, _, key_elixir_ast}, {:value, _, value_elixir_ast} | _]}]]
-        } = Enum.split(elixir_ast, -1)
+    if match?([do: {:__block__, _, [{:key, _, _}, {:value, _, _} | _]}], Elixir.List.last(elixir_ast)) do
+      {
+        flags,
+        [[do: {:__block__, _, [{:key, _, key_elixir_ast}, {:value, _, value_elixir_ast} | _]}]]
+      } = Enum.split(elixir_ast, -1)
 
-        {
-          Context.inner_expression!(context, key_elixir_ast, %Ast{}),
-          context
-          |> Context.inner_expression!(value_elixir_ast, %Ast{})
-          |> struct(flags: Elixir.List.flatten(flags))
-        }
-      else
-        [
-          key_elixir_ast
-          | value_elixir_ast
-        ] = elixir_ast
-
-        {
-          Context.inner_expression!(context, [key_elixir_ast], %Ast{}),
-          Context.inner_expression!(context, value_elixir_ast, %Ast{})
-        }
+      quote do
+        Ast.add_keyword_args(unquote(schema_ast),
+          field: {
+            unquote(Context.inner_expression!(context, key_elixir_ast)),
+            unquote(Context.inner_expression!(context, value_elixir_ast))
+            |> struct(flags: unquote(Elixir.List.flatten(flags)))
+          }
+        )
       end
+    else
+      [
+        key_elixir_ast
+        | value_elixir_ast
+      ] = elixir_ast
 
-    Ast.add_keyword_args(schema_ast, field: {key_type, value_type})
+      quote do
+        Ast.add_keyword_args(unquote(schema_ast),
+          field: {
+            unquote(Context.inner_expression!(context, [key_elixir_ast])),
+            unquote(Context.inner_expression!(context, value_elixir_ast))
+          }
+        )
+      end
+    end
   end
 
-  def expression!(_context, _ast, _schema_ast, _literal?), do: false
+  def expression!(_context, _ast, _schema_ast, _literal?), do: :"$skip"
 end
